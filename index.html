@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Feira da Radio AARN 2026</title>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+  <style>
+    :root {
+      --bg:      #060b18;
+      --surface: #0d1526;
+      --border:  #1e2d4a;
+      --green:   #00ff9d;
+      --blue:    #3b9eff;
+      --yellow:  #ffcc00;
+      --red:     #ff4466;
+      --text:    #e8edf5;
+      --muted:   #4a5a7a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'Courier New', monospace;
+      min-height: 100vh; max-width: 480px; margin: 0 auto; padding-bottom: 40px;
+    }
+
+    /* HEADER */
+    .header {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 14px 20px 0; position: sticky; top: 0; z-index: 100;
+    }
+    .header-top { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .header-top h1 { font-size: 17px; font-weight: 700; flex: 1; }
+    .live-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--green); box-shadow: 0 0 8px var(--green);
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .stats-bar { display: flex; }
+    .stat { flex:1; text-align:center; padding:10px 0; border-top:2px solid transparent; cursor:pointer; }
+    .stat.s-green { border-color: var(--green); }
+    .stat.s-blue  { border-color: var(--blue); }
+    .stat.s-yellow{ border-color: var(--yellow); }
+    .stat-value { font-size: 22px; font-weight: 900; line-height: 1; }
+    .stat.s-green  .stat-value { color: var(--green); }
+    .stat.s-blue   .stat-value { color: var(--blue); }
+    .stat.s-yellow .stat-value { color: var(--yellow); }
+    .stat-label { font-size: 9px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-top: 3px; }
+
+    /* TABS */
+    .tabs {
+      display: flex; background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 90px; z-index: 99;
+    }
+    .tab {
+      flex:1; padding:13px 0; text-align:center; cursor:pointer;
+      font-size:11px; letter-spacing:1.5px; text-transform:uppercase;
+      color:var(--muted); border-bottom:2px solid transparent; transition:all 0.2s;
+    }
+    .tab.active { color:var(--green); border-bottom-color:var(--green); }
+
+    /* CONTENT */
+    .content { display: none; }
+    .content.active { display: block; }
+
+    /* SCANNER */
+    .scanner-wrap { position:relative; background:#000; overflow:hidden; max-height:300px; }
+    #video { width:100%; display:block; max-height:300px; object-fit:cover; }
+    #canvas { display:none; }
+    .scanner-overlay {
+      position:absolute; inset:0; display:none;
+      align-items:center; justify-content:center; background:rgba(0,0,0,0.4);
+    }
+    .scanner-overlay.active { display:flex; }
+    .scan-frame { width:210px; height:210px; position:relative; }
+    .scan-frame::before,.scan-frame::after,.scan-frame span::before,.scan-frame span::after {
+      content:''; position:absolute; width:28px; height:28px;
+      border-color:var(--green); border-style:solid;
+    }
+    .scan-frame::before  { top:0;    left:0;  border-width:3px 0 0 3px; }
+    .scan-frame::after   { top:0;    right:0; border-width:3px 3px 0 0; }
+    .scan-frame span::before { bottom:0; left:0;  border-width:0 0 3px 3px; }
+    .scan-frame span::after  { bottom:0; right:0; border-width:0 3px 3px 0; }
+    .scan-line {
+      position:absolute; left:8%; right:8%; height:2px;
+      background:var(--green); box-shadow:0 0 12px var(--green);
+      animation:scanline 1.8s ease-in-out infinite;
+    }
+    @keyframes scanline { 0%,100%{top:8%} 50%{top:88%} }
+    .scan-btn {
+      width:100%; padding:18px; background:var(--green); color:#000;
+      border:none; cursor:pointer; font-family:'Courier New',monospace;
+      font-size:13px; font-weight:900; letter-spacing:2px; text-transform:uppercase;
+    }
+    .scan-btn.stop { background:var(--red); color:#fff; }
+
+    /* RESULT */
+    .result-card {
+      margin:14px 16px; border-radius:12px; padding:18px 20px;
+      border:1px solid; animation:fadeUp 0.25s ease; display:none;
+    }
+    .result-card.show { display:block; }
+    .result-card.ok   { background:rgba(0,255,157,0.07); border-color:rgba(0,255,157,0.3); }
+    .result-card.dup  { background:rgba(255,204,0,0.07);  border-color:rgba(255,204,0,0.3); }
+    .result-card.err  { background:rgba(255,68,102,0.07); border-color:rgba(255,68,102,0.3); }
+    .result-card.load { background:var(--surface); border-color:var(--border); text-align:center; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+    .rc-icon  { font-size:30px; margin-bottom:6px; }
+    .rc-name  { font-size:19px; font-weight:700; }
+    .rc-num   { font-size:12px; opacity:0.65; margin-top:3px; }
+    .rc-msg   { font-size:12px; margin-top:8px; opacity:0.55; }
+
+    /* LOG */
+    .log-section { padding:0 16px 16px; }
+    .section-title {
+      font-size:10px; letter-spacing:2.5px; color:var(--muted);
+      text-transform:uppercase; padding:14px 0 8px;
+      border-bottom:1px solid var(--border); margin-bottom:4px;
+    }
+    .log-item {
+      display:flex; align-items:center; gap:10px;
+      padding:11px 0; border-bottom:1px solid var(--border); font-size:13px;
+    }
+    .dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+    .dot.ok  { background:var(--green); box-shadow:0 0 6px var(--green); }
+    .dot.dup { background:var(--yellow); }
+    .dot.err { background:var(--red); }
+    .log-nome { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .log-num,.log-time { color:var(--muted); font-size:11px; flex-shrink:0; }
+
+    /* RAFFLE */
+    .raffle-section { padding:20px 16px; }
+    .raffle-display {
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:16px; padding:32px 24px; text-align:center; margin-bottom:20px;
+      min-height:220px; display:flex; flex-direction:column;
+      align-items:center; justify-content:center;
+    }
+    .raffle-idle { color:var(--muted); font-size:13px; letter-spacing:2px; line-height:2.5; }
+    .spin-num { font-size:46px; font-weight:900; color:var(--yellow); letter-spacing:3px; }
+    @keyframes spin-anim { 0%{opacity:1} 50%{opacity:0.3} 100%{opacity:1} }
+    .spinning .spin-num { animation:spin-anim 0.12s linear infinite; }
+    .winner-wrap { animation:winPop 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+    @keyframes winPop { 0%{transform:scale(0.4);opacity:0} 100%{transform:scale(1);opacity:1} }
+    .winner-label { font-size:10px; letter-spacing:3px; color:var(--muted); text-transform:uppercase; margin-bottom:14px; }
+    .winner-num { font-size:52px; font-weight:900; color:var(--yellow); letter-spacing:2px; text-shadow:0 0 40px rgba(255,204,0,0.5); line-height:1; }
+    .winner-name { font-size:22px; font-weight:700; margin-top:10px; }
+    .winner-ind  { font-size:16px; color:var(--green); margin-top:4px; }
+    .winner-meta { font-size:11px; color:var(--muted); margin-top:14px; }
+    .raffle-btn {
+      width:100%; padding:20px;
+      background:linear-gradient(135deg,#1a0d00,#2e1800);
+      border:2px solid var(--yellow); color:var(--yellow);
+      border-radius:12px; cursor:pointer;
+      font-family:'Courier New',monospace;
+      font-size:15px; font-weight:900; letter-spacing:3px; text-transform:uppercase;
+      transition:all 0.2s;
+    }
+    .raffle-btn:active:not(:disabled) { transform:scale(0.97); }
+    .raffle-btn:disabled { opacity:0.35; cursor:not-allowed; }
+    .history-item { display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--border); }
+    .hist-rank { width:26px; height:26px; border-radius:50%; background:var(--yellow); color:#000; font-size:11px; font-weight:900; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .hist-num  { color:var(--yellow); font-weight:700; font-size:13px; }
+    .hist-name { color:var(--text); font-size:13px; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .hist-time { color:var(--muted); font-size:11px; flex-shrink:0; }
+    .empty { text-align:center; color:var(--muted); font-size:13px; padding:36px 20px; letter-spacing:1px; }
+
+    /* CONFIG */
+    .config-bar {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 10px 16px; font-size: 11px; color: var(--muted);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .config-bar span { color: var(--green); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .config-bar button {
+      background: none; border: 1px solid var(--border); color: var(--muted);
+      padding: 4px 10px; border-radius: 4px; font-size: 10px; cursor: pointer;
+      font-family: 'Courier New', monospace;
+    }
+  </style>
+</head>
+<body>
+
+<!-- CONFIG BAR -->
+<div class="config-bar">
+  API:&nbsp;<span id="api-url-display">Nao configurada</span>
+  <button onclick="configAPI()">Editar</button>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div class="live-dot"></div>
+    <span style="font-size:22px;">&#x1F4FB;</span>
+    <h1>Feira da Radio AARN</h1>
+    <span style="color:var(--muted);font-size:11px;" id="clock"></span>
+  </div>
+  <div class="stats-bar">
+    <div class="stat s-green">
+      <div class="stat-value" id="s-presentes">-</div>
+      <div class="stat-label">Presentes</div>
+    </div>
+    <div class="stat s-blue">
+      <div class="stat-value" id="s-total">-</div>
+      <div class="stat-label">Registados</div>
+    </div>
+    <div class="stat s-yellow">
+      <div class="stat-value" id="s-pct">-</div>
+      <div class="stat-label">Taxa</div>
+    </div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" data-tab="scanner">Scanner</div>
+  <div class="tab"        data-tab="raffle" >Sorteio</div>
+</div>
+
+<!-- SCANNER TAB -->
+<div class="content active" id="tab-scanner">
+  <div class="scanner-wrap">
+    <video id="video" autoplay playsinline muted></video>
+    <canvas id="canvas"></canvas>
+    <div class="scanner-overlay" id="scan-overlay">
+      <div class="scan-frame"><span></span><div class="scan-line"></div></div>
+    </div>
+  </div>
+  <button class="scan-btn" id="scan-btn" onclick="toggleScanner()">
+    INICIAR SCANNER
+  </button>
+  <div class="result-card load" id="result-card" style="display:none;"></div>
+  <div class="log-section">
+    <div class="section-title">- Entradas desta sessao -</div>
+    <div id="log-list"><div class="empty">Ainda sem entradas validadas</div></div>
+  </div>
+</div>
+
+<!-- RAFFLE TAB -->
+<div class="content" id="tab-raffle">
+  <div class="raffle-section">
+    <div class="raffle-display" id="raffle-display">
+      <div class="raffle-idle">Pronto para sortear</div>
+    </div>
+    <button class="raffle-btn" id="raffle-btn" onclick="startRaffle()">
+      SORTEAR AGORA
+    </button>
+    <div style="margin-top:24px;">
+      <div class="section-title">- Historico de sorteios -</div>
+      <div id="history-list"><div class="empty">Nenhum sorteio ainda</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+//  CONFIGURAÇÃO DA API
+//  Muda esta variável para o URL do teu Apps Script
+// ═══════════════════════════════════════════
+let API_URL = localStorage.getItem('aarn_api_url') || '';
+
+function configAPI() {
+  const url = prompt('Cola aqui o URL do teu Google Apps Script:\n(termina em /exec)', API_URL);
+  if (url && url.includes('script.google.com')) {
+    API_URL = url.trim();
+    localStorage.setItem('aarn_api_url', API_URL);
+    document.getElementById('api-url-display').textContent = API_URL;
+    refreshStats();
+    alert('URL guardado!');
+  } else if (url !== null) {
+    alert('URL invalido. Deve ser um URL do Google Apps Script.');
+  }
+}
+
+function apiCall(action, params = {}) {
+  if (!API_URL) {
+    alert('Configura primeiro o URL da API (botao Editar no topo)');
+    return Promise.reject('No API URL');
+  }
+  const url = API_URL + '?action=' + action + '&' +
+    Object.entries(params).map(([k,v]) => k + '=' + encodeURIComponent(v)).join('&');
+  return fetch(url).then(r => r.json());
+}
+
+// ═══════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════
+document.getElementById('api-url-display').textContent = API_URL || 'Nao configurada';
+
+function updateClock() {
+  document.getElementById('clock').textContent =
+    new Date().toLocaleTimeString('pt-PT', { hour:'2-digit', minute:'2-digit' });
+}
+updateClock();
+setInterval(updateClock, 10000);
+
+// TABS
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+    if (tab.dataset.tab === 'raffle') loadHistory();
+  });
+});
+
+// ═══════════════════════════════════════════
+//  STATS
+// ═══════════════════════════════════════════
+function refreshStats() {
+  apiCall('stats')
+    .then(s => {
+      document.getElementById('s-presentes').textContent = s.presentes;
+      document.getElementById('s-total').textContent     = s.total;
+      const pct = s.total > 0 ? Math.round(s.presentes / s.total * 100) : 0;
+      document.getElementById('s-pct').textContent = pct + '%';
+    })
+    .catch(() => {});
+}
+if (API_URL) refreshStats();
+setInterval(() => { if (API_URL) refreshStats(); }, 30000);
+
+// ═══════════════════════════════════════════
+//  SCANNER
+// ═══════════════════════════════════════════
+let scanning = false, videoStream = null, scanInterval = null, processing = false;
+
+async function toggleScanner() {
+  scanning ? stopScanner() : await startScanner();
+}
+
+async function startScanner() {
+  try {
+    videoStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width:{ideal:1280}, height:{ideal:720} }
+    });
+    const video = document.getElementById('video');
+    video.srcObject = videoStream;
+    await video.play();
+    scanning = true;
+    document.getElementById('scan-btn').textContent = 'PARAR SCANNER';
+    document.getElementById('scan-btn').classList.add('stop');
+    document.getElementById('scan-overlay').classList.add('active');
+    scanInterval = setInterval(scanFrame, 200);
+  } catch(err) {
+    alert('Nao foi possivel aceder a camara.\n' + err.message +
+          '\n\nCertifica-te que:\n1. Estás a usar Safari no iOS\n2. Permitiste acesso a camara nas Definicoes');
+  }
+}
+
+function stopScanner() {
+  if (videoStream) { videoStream.getTracks().forEach(t => t.stop()); videoStream = null; }
+  clearInterval(scanInterval);
+  scanning = false; processing = false;
+  document.getElementById('video').srcObject = null;
+  document.getElementById('scan-btn').textContent = 'INICIAR SCANNER';
+  document.getElementById('scan-btn').classList.remove('stop');
+  document.getElementById('scan-overlay').classList.remove('active');
+}
+
+function scanFrame() {
+  if (!scanning || processing) return;
+  const video = document.getElementById('video');
+  if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
+  const canvas = document.getElementById('canvas');
+  canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0);
+  const img  = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const code = jsQR(img.data, img.width, img.height, { inversionAttempts:'dontInvert' });
+  if (code && code.data) {
+    processing = true;
+    if (navigator.vibrate) navigator.vibrate([50]);
+    processQR(code.data);
+  }
+}
+
+function processQR(numero) {
+  showResult('load', null);
+  apiCall('validate', { numero })
+    .then(r => {
+      const type = r.success ? (r.duplicado ? 'dup' : 'ok') : 'err';
+      showResult(type, r);
+      addLog(type, r);
+      refreshStats();
+      setTimeout(() => { hideResult(); processing = false; }, 3000);
+    })
+    .catch(() => {
+      showResult('err', { message: 'Erro de ligacao. Tenta novamente.' });
+      setTimeout(() => { processing = false; }, 2500);
+    });
+}
+
+function showResult(type, data) {
+  const el = document.getElementById('result-card');
+  el.className = 'result-card show ' + type;
+  el.style.display = 'block';
+  if (type === 'load') {
+    el.innerHTML = '<div style="color:var(--muted);font-size:12px;letter-spacing:2px;">A VALIDAR...</div>';
+    return;
+  }
+  const icons = { ok:'[OK]', dup:'[!]', err:'[X]' };
+  el.innerHTML = `
+    <div class="rc-icon">${icons[type]}</div>
+    <div class="rc-name">${data.nome || data.message || 'QR invalido'}</div>
+    <div class="rc-num">${data.numero || ''}${data.indicativo ? ' - ' + data.indicativo : ''}</div>
+    <div class="rc-msg">${
+      type==='ok'  ? 'Entrada validada as ' + data.horaEntrada :
+      type==='dup' ? 'Ja entrou as ' + data.horaEntrada :
+      data.message || ''
+    }</div>`;
+  const vibs = { ok:[100,50,100], dup:[200,80,200,80,200], err:[400] };
+  if (navigator.vibrate) navigator.vibrate(vibs[type]);
+}
+
+function hideResult() {
+  const el = document.getElementById('result-card');
+  el.className = 'result-card'; el.style.display = 'none';
+}
+
+function addLog(type, r) {
+  if (!r.nome) return;
+  const list = document.getElementById('log-list');
+  if (list.querySelector('.empty')) list.innerHTML = '';
+  const item = document.createElement('div');
+  item.className = 'log-item';
+  item.innerHTML = `
+    <div class="dot ${type}"></div>
+    <div class="log-nome">${r.nome}</div>
+    <div class="log-num">${r.numero}</div>
+    <div class="log-time">${new Date().toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'})}</div>`;
+  list.insertBefore(item, list.firstChild);
+}
+
+// ═══════════════════════════════════════════
+//  RAFFLE
+// ═══════════════════════════════════════════
+const FAKE_NUMS = ['RF-012','RF-037','RF-089','RF-004','RF-055','RF-071','RF-023','RF-099'];
+let spinIdx = 0, raffleHist = [];
+
+function startRaffle() {
+  const btn = document.getElementById('raffle-btn');
+  const disp = document.getElementById('raffle-display');
+  btn.disabled = true; spinIdx = 0;
+  disp.className = 'raffle-display spinning';
+  disp.innerHTML = '<div style="color:var(--yellow);font-size:10px;letter-spacing:3px;margin-bottom:16px;">SORTEANDO...</div><div class="spin-num" id="spin-num">RF-???</div>';
+  const anim = setInterval(() => {
+    document.getElementById('spin-num').textContent = FAKE_NUMS[spinIdx++ % FAKE_NUMS.length];
+  }, 80);
+  setTimeout(() => {
+    apiCall('raffle')
+      .then(r => {
+        clearInterval(anim);
+        disp.className = 'raffle-display';
+        if (!r.success) {
+          disp.innerHTML = `<div style="color:var(--red);font-size:13px;">${r.message}</div>`;
+          btn.disabled = false; return;
+        }
+        const v = r.vencedor;
+        disp.innerHTML = `
+          <div class="winner-wrap">
+            <div class="winner-label">VENCEDOR</div>
+            <div class="winner-num">${v.numero}</div>
+            <div class="winner-name">${v.nome}</div>
+            ${v.indicativo ? '<div class="winner-ind">' + v.indicativo + '</div>' : ''}
+            <div class="winner-meta">${r.totalPresentes} presentes - ${r.hora}</div>
+          </div>`;
+        if (navigator.vibrate) navigator.vibrate([100,50,100,50,300,80,300]);
+        raffleHist.unshift({...v, hora: r.hora});
+        renderHistory();
+        btn.disabled = false;
+      })
+      .catch(() => {
+        clearInterval(anim);
+        disp.className = 'raffle-display';
+        disp.innerHTML = '<div style="color:var(--red);">Erro de ligacao</div>';
+        btn.disabled = false;
+      });
+  }, 2200);
+}
+
+function loadHistory() {
+  apiCall('history').then(h => { raffleHist = h; renderHistory(); }).catch(()=>{});
+}
+
+function renderHistory() {
+  const list = document.getElementById('history-list');
+  if (!raffleHist.length) { list.innerHTML = '<div class="empty">Nenhum sorteio ainda</div>'; return; }
+  list.innerHTML = raffleHist.map((h, i) => `
+    <div class="history-item">
+      <div class="hist-rank">${i+1}</div>
+      <div style="flex:1;min-width:0;">
+        <div class="hist-num">${h.numero}</div>
+        <div class="hist-name">${h.nome}${h.indicativo ? ' - ' + h.indicativo : ''}</div>
+      </div>
+      <div class="hist-time">${h.hora}</div>
+    </div>`).join('');
+}
+</script>
+</body>
+</html>
