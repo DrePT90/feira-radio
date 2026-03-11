@@ -30,23 +30,23 @@
       padding: 14px 20px 0; position: sticky; top: 0; z-index: 100;
     }
     .header-top { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
-    .header-top h1 { font-size: 17px; font-weight: 700; flex: 1; }
+    .header-top h1 { font-size: 20px; font-weight: 700; flex: 1; }
     .live-dot {
-      width: 8px; height: 8px; border-radius: 50%;
+      width: 10px; height: 10px; border-radius: 50%;
       background: var(--green); box-shadow: 0 0 8px var(--green);
       animation: pulse 1.5s ease-in-out infinite;
     }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
     .stats-bar { display: flex; }
-    .stat { flex:1; text-align:center; padding:10px 0; border-top:2px solid transparent; cursor:pointer; }
+    .stat { flex:1; text-align:center; padding:14px 0; border-top:3px solid transparent; cursor:pointer; }
     .stat.s-green { border-color: var(--green); }
     .stat.s-blue  { border-color: var(--blue); }
     .stat.s-yellow{ border-color: var(--yellow); }
-    .stat-value { font-size: 22px; font-weight: 900; line-height: 1; }
+    .stat-value { font-size: 32px; font-weight: 900; line-height: 1; }
     .stat.s-green  .stat-value { color: var(--green); }
     .stat.s-blue   .stat-value { color: var(--blue); }
     .stat.s-yellow .stat-value { color: var(--yellow); }
-    .stat-label { font-size: 9px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-top: 3px; }
+    .stat-label { font-size: 11px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-top: 5px; }
 
     /* TABS */
     .tabs {
@@ -55,8 +55,8 @@
       position: sticky; top: 90px; z-index: 99;
     }
     .tab {
-      flex:1; padding:13px 0; text-align:center; cursor:pointer;
-      font-size:11px; letter-spacing:1.5px; text-transform:uppercase;
+      flex:1; padding:18px 0; text-align:center; cursor:pointer;
+      font-size:13px; letter-spacing:1.5px; text-transform:uppercase;
       color:var(--muted); border-bottom:2px solid transparent; transition:all 0.2s;
     }
     .tab.active { color:var(--green); border-bottom-color:var(--green); }
@@ -90,9 +90,9 @@
     }
     @keyframes scanline { 0%,100%{top:8%} 50%{top:88%} }
     .scan-btn {
-      width:100%; padding:18px; background:var(--green); color:#000;
+      width:100%; padding:24px; background:var(--green); color:#000;
       border:none; cursor:pointer; font-family:'Courier New',monospace;
-      font-size:13px; font-weight:900; letter-spacing:2px; text-transform:uppercase;
+      font-size:16px; font-weight:900; letter-spacing:2px; text-transform:uppercase;
     }
     .scan-btn.stop { background:var(--red); color:#fff; }
 
@@ -107,10 +107,10 @@
     .result-card.err  { background:rgba(255,68,102,0.07); border-color:rgba(255,68,102,0.3); }
     .result-card.load { background:var(--surface); border-color:var(--border); text-align:center; }
     @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
-    .rc-icon  { font-size:30px; margin-bottom:6px; }
-    .rc-name  { font-size:19px; font-weight:700; }
-    .rc-num   { font-size:12px; opacity:0.65; margin-top:3px; }
-    .rc-msg   { font-size:12px; margin-top:8px; opacity:0.55; }
+    .rc-icon  { font-size:40px; margin-bottom:10px; }
+    .rc-name  { font-size:24px; font-weight:700; }
+    .rc-num   { font-size:15px; opacity:0.65; margin-top:6px; }
+    .rc-msg   { font-size:15px; margin-top:10px; opacity:0.55; }
 
     /* LOG */
     .log-section { padding:0 16px 16px; }
@@ -121,7 +121,7 @@
     }
     .log-item {
       display:flex; align-items:center; gap:10px;
-      padding:11px 0; border-bottom:1px solid var(--border); font-size:13px;
+      padding:14px 0; border-bottom:1px solid var(--border); font-size:15px;
     }
     .dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
     .dot.ok  { background:var(--green); box-shadow:0 0 6px var(--green); }
@@ -150,12 +150,12 @@
     .winner-ind  { font-size:16px; color:var(--green); margin-top:4px; }
     .winner-meta { font-size:11px; color:var(--muted); margin-top:14px; }
     .raffle-btn {
-      width:100%; padding:20px;
+      width:100%; padding:28px;
       background:linear-gradient(135deg,#1a0d00,#2e1800);
       border:2px solid var(--yellow); color:var(--yellow);
       border-radius:12px; cursor:pointer;
       font-family:'Courier New',monospace;
-      font-size:15px; font-weight:900; letter-spacing:3px; text-transform:uppercase;
+      font-size:18px; font-weight:900; letter-spacing:3px; text-transform:uppercase;
       transition:all 0.2s;
     }
     .raffle-btn:active:not(:disabled) { transform:scale(0.97); }
@@ -208,7 +208,7 @@
     </div>
     <div class="stat s-yellow">
       <div class="stat-value" id="s-pct">-</div>
-      <div class="stat-label">Taxa</div>
+      <div class="stat-label">Validados</div>
     </div>
   </div>
 </div>
@@ -248,7 +248,10 @@
       SORTEAR AGORA
     </button>
     <div style="margin-top:24px;">
-      <div class="section-title">- Historico de sorteios -</div>
+      <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;">- Historico de sorteios -<span id="clear-btn-toggle" style="font-size:9px;color:var(--border);cursor:pointer;letter-spacing:1px;" onclick="toggleClearBtn()">...</span></div>
+      <div id="clear-btn-wrap" style="display:none;padding:10px 0;">
+        <button onclick="clearHistory()" style="width:100%;padding:12px;background:rgba(255,68,102,0.1);border:1px solid var(--red);color:var(--red);border-radius:8px;cursor:pointer;font-family:'Courier New',monospace;font-size:12px;letter-spacing:2px;">LIMPAR HISTORICO</button>
+      </div>
       <div id="history-list"><div class="empty">Nenhum sorteio ainda</div></div>
     </div>
   </div>
@@ -342,8 +345,7 @@ function refreshStats() {
     .then(s => {
       document.getElementById('s-presentes').textContent = s.presentes;
       document.getElementById('s-total').textContent     = s.total;
-      const pct = s.total > 0 ? Math.round(s.presentes / s.total * 100) : 0;
-      document.getElementById('s-pct').textContent = pct + '%';
+      document.getElementById('s-pct').textContent = s.presentes;
     })
     .catch(() => {});
 }
@@ -506,11 +508,23 @@ function startRaffle() {
         disp.innerHTML = '<div style="color:var(--red);">Erro de ligacao</div>';
         btn.disabled = false;
       });
-  }, 2200);
+  }, 7000);
 }
 
 function loadHistory() {
   apiCall('history').then(h => { raffleHist = h; renderHistory(); }).catch(()=>{});
+}
+
+function toggleClearBtn() {
+  const wrap = document.getElementById('clear-btn-wrap');
+  wrap.style.display = wrap.style.display === 'none' ? 'block' : 'none';
+}
+
+function clearHistory() {
+  if (!confirm('Tens a certeza que queres limpar o historico de sorteios?')) return;
+  apiCall('clearHistory')
+    .then(() => { raffleHist = []; renderHistory(); document.getElementById('clear-btn-wrap').style.display = 'none'; })
+    .catch(() => { raffleHist = []; renderHistory(); document.getElementById('clear-btn-wrap').style.display = 'none'; });
 }
 
 function renderHistory() {
