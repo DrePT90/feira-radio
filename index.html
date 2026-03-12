@@ -1399,6 +1399,7 @@ function iniciarAutoSorteio() {
 
   if (!inicio || !fim) { alert('Define a hora de inicio e fim.'); return; }
   if (inicio >= fim)   { alert('A hora de inicio deve ser antes do fim.'); return; }
+  if (horaAtual() >= fim) { alert('A hora de fim já passou. Define um novo horário.'); return; }
 
   const proximo = calcProximoSorteio(horaAtual(), intervalo);
 
