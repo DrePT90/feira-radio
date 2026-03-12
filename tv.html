@@ -282,6 +282,7 @@ const FAKE_NUMS = ['RF-012','RF-037','RF-089','RF-004','RF-055','RF-071','RF-023
 
 let ultimoVencedor = null;
 let animating = false;
+const vistos = new Set(); // tracks all winners seen this session
 let spinIdx = 0;
 let tvVencedores = [];
 try { tvVencedores = JSON.parse(localStorage.getItem('aarn_tv_vencedores') || '[]'); } catch(e) {}
@@ -357,7 +358,8 @@ function checkNewWinner() {
     if (!hist || !hist.length) return;
     const latest = hist[0];
     const key = latest.numero;
-    if (ultimoVencedor !== key) {
+    if (!vistos.has(key)) {
+      vistos.add(key);
       ultimoVencedor = key;
       animarSorteio(latest);
     }
@@ -420,11 +422,10 @@ function mostrarVencedor(v) {
       <div class="winner-meta" style="margin-top:12px;">${formatHora(v.hora)}</div>
     </div>`;
 
-  // Add to history
-  // Avoid duplicates
-  if (!tvVencedores.length || tvVencedores[0].numero !== v.numero) {
+  // Add to history panel (vistos Set already prevents double animation)
+  if (!tvVencedores.find(x => x.numero === v.numero)) {
     tvVencedores.unshift(v);
-    localStorage.setItem('aarn_tv_vencedores', JSON.stringify(tvVencedores.slice(0,10)));
+    try { localStorage.setItem('aarn_tv_vencedores', JSON.stringify(tvVencedores.slice(0,10))); } catch(e) {}
   }
   renderTvHistory();
 
@@ -595,15 +596,14 @@ updateCountdown();
 
 apiCall('history').then(hist => {
   if (hist && hist.length) {
-    // Mark latest as seen BEFORE polling starts — prevents animating old winners
+    // Mark ALL existing winners as seen — never re-animate them
+    hist.forEach(h => vistos.add(h.numero));
     ultimoVencedor = hist[0].numero;
     tvVencedores = hist.slice(0, 5);
     renderTvHistory();
   }
-  // Start polling only after we know current state
   setInterval(checkNewWinner, 1000);
 }).catch(() => {
-  // If history fails, start polling but mark nothing — next winner will animate
   setInterval(checkNewWinner, 1000);
 });
 
