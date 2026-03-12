@@ -167,18 +167,7 @@
     .hist-time { color:var(--muted); font-size:11px; flex-shrink:0; }
     .empty { text-align:center; color:var(--muted); font-size:13px; padding:36px 20px; letter-spacing:1px; }
 
-    /* CONFIG */
-    .config-bar {
-      background: var(--surface); border-bottom: 1px solid var(--border);
-      padding: 10px 16px; font-size: 11px; color: var(--muted);
-      display: flex; align-items: center; gap: 8px;
-    }
-    .config-bar span { color: var(--green); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .config-bar button {
-      background: none; border: 1px solid var(--border); color: var(--muted);
-      padding: 4px 10px; border-radius: 4px; font-size: 10px; cursor: pointer;
-      font-family: 'Courier New', monospace;
-    }
+
     /* LISTA */
     .lista-section { padding:0 16px 16px; }
     .lista-item {
@@ -203,18 +192,12 @@
 </head>
 <body>
 
-<!-- CONFIG BAR -->
-<div class="config-bar">
-  API:&nbsp;<span id="api-url-display">Nao configurada</span>
-  <button onclick="configAPI()">Editar</button>
-</div>
-
 <!-- HEADER -->
 <div class="header">
   <div class="header-top">
     <div class="live-dot"></div>
     <span style="font-size:22px;">&#x1F4FB;</span>
-    <h1>Feira da Radio AARN</h1>
+    <h1>AARN Registration App v2.0</h1>
     <span style="color:var(--muted);font-size:11px;" id="clock"></span>
   </div>
   <div class="stats-bar">
