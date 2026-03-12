@@ -154,6 +154,26 @@
 
     @keyframes fadeIn { from{opacity:0} to{opacity:1} }
 
+    /* WINNERS HISTORY */
+    .tv-history {
+      position: fixed; right: 32px; top: 50%; transform: translateY(-50%);
+      z-index: 10; width: 220px;
+    }
+    .tv-history-title {
+      font-size: 10px; letter-spacing: 3px; color: #8ba3c4; font-weight: 700;
+      text-transform: uppercase; margin-bottom: 12px; text-align: center;
+    }
+    .tv-history-item {
+      background: rgba(13,21,38,0.85); border: 1px solid rgba(255,204,0,0.2);
+      border-radius: 10px; padding: 10px 14px; margin-bottom: 8px;
+      animation: fadeIn 0.4s ease;
+    }
+    .tv-history-num  { color: #f59e0b; font-size: 13px; font-weight: 900; letter-spacing: 2px; }
+    .tv-history-nome { color: #e8edf5; font-size: 12px; font-weight: 700; margin-top: 2px; }
+    .tv-history-ind  { color: #8ba3c4; font-size: 11px; margin-top: 1px; }
+    .tv-history-hora { color: #8ba3c4; font-size: 10px; margin-top: 4px; }
+
+
     /* COUNTDOWN */
     .countdown-big {
       position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%);
@@ -237,6 +257,12 @@
   <div class="countdown-time" id="countdown-time">--:--</div>
 </div>
 
+<!-- WINNERS HISTORY -->
+<div class="tv-history" id="tv-history" style="display:none;">
+  <div class="tv-history-title">&#127881; Vencedores</div>
+  <div id="tv-history-list"></div>
+</div>
+
 <script>
 // ── CONFIG ──────────────────────────────────────
 const API_URL = 'https://script.google.com/macros/s/AKfycbyKdkiR2flJpHgr33maoiO6XeioEj6bnxudrqaoW0ufFJh5X1s5dqilCcwKVsOJkMEueQ/exec';
@@ -245,6 +271,7 @@ const FAKE_NUMS = ['RF-012','RF-037','RF-089','RF-004','RF-055','RF-071','RF-023
 
 let ultimoVencedor = null;
 let spinIdx = 0;
+let tvVencedores = [];
 
 // Clock
 function updateClock() {
@@ -334,8 +361,15 @@ function mostrarVencedor(v) {
       <div class="winner-num">${v.numero}</div>
       <div class="winner-name">${v.nome}</div>
       ${v.indicativo ? '<div class="winner-ind">' + v.indicativo + '</div>' : ''}
-      <div class="winner-meta">${v.hora} &nbsp;|&nbsp; ${document.getElementById('tv-presentes').textContent} presentes</div>
+      <div class="winner-meta" style="color:#f59e0b;font-size:18px;font-weight:700;letter-spacing:1px;margin-top:16px;line-height:1.5;">
+        Por favor dirija-se à mesa da A.A.R.N.<br>para levantar o seu prémio
+      </div>
+      <div class="winner-meta" style="margin-top:12px;">${v.hora}</div>
     </div>`;
+
+  // Add to history
+  tvVencedores.unshift(v);
+  renderTvHistory();
 
   // Return to idle after 30s, restore big countdown
   setTimeout(() => {
@@ -438,12 +472,26 @@ try {
 const urlParams = new URLSearchParams(window.location.search);
 if (urlParams.get('proximo')) setProximoSorteio(urlParams.get('proximo'));
 
+function renderTvHistory() {
+  const wrap = document.getElementById('tv-history');
+  const list = document.getElementById('tv-history-list');
+  if (!tvVencedores.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  list.innerHTML = tvVencedores.slice(0, 5).map((v, i) => `
+    <div class="tv-history-item">
+      <div class="tv-history-num">${i === 0 ? '&#127881; ' : ''}${v.numero}</div>
+      <div class="tv-history-nome">${v.nome}</div>
+      ${v.indicativo ? '<div class="tv-history-ind">' + v.indicativo + '</div>' : ''}
+      <div class="tv-history-hora">${v.hora}</div>
+    </div>`).join('');
+}
+
 // Init
 refreshStats();
 checkNewWinner();
 updateCountdown();
 setInterval(refreshStats, 15000);
-setInterval(checkNewWinner, 5000);
+setInterval(checkNewWinner, 1000);
 setInterval(updateCountdown, 1000);
 </script>
 </body>
