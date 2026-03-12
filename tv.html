@@ -269,9 +269,10 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbyKdkiR2flJpHgr33maoiO6
 const FAKE_NUMS = ['RF-012','RF-037','RF-089','RF-004','RF-055','RF-071','RF-023','RF-099'];
 // ────────────────────────────────────────────────
 
-let ultimoVencedor = sessionStorage.getItem('aarn_ultimo_vencedor') || null;
+let ultimoVencedor = localStorage.getItem('aarn_ultimo_vencedor') || null;
 let spinIdx = 0;
 let tvVencedores = [];
+try { tvVencedores = JSON.parse(localStorage.getItem('aarn_tv_vencedores') || '[]'); } catch(e) {}
 
 function formatHora(h) {
   if (!h) return '';
@@ -336,7 +337,7 @@ function checkNewWinner() {
     const key = latest.numero + String(latest.hora);
     if (ultimoVencedor !== key) {
       ultimoVencedor = key;
-      sessionStorage.setItem('aarn_ultimo_vencedor', key);
+      localStorage.setItem('aarn_ultimo_vencedor', key);
       animarSorteio(latest);
     }
   }).catch(()=>{});
@@ -382,7 +383,11 @@ function mostrarVencedor(v) {
     </div>`;
 
   // Add to history
-  tvVencedores.unshift(v);
+  // Avoid duplicates
+  if (!tvVencedores.length || tvVencedores[0].numero !== v.numero) {
+    tvVencedores.unshift(v);
+    localStorage.setItem('aarn_tv_vencedores', JSON.stringify(tvVencedores.slice(0,10)));
+  }
   renderTvHistory();
 
   // Return to idle after 30s, restore big countdown
@@ -500,12 +505,30 @@ function renderTvHistory() {
     </div>`).join('');
 }
 
-// Init
+// Init — load history first, mark all existing as seen, THEN start polling
+renderTvHistory();
 refreshStats();
-checkNewWinner();
 updateCountdown();
+
+apiCall('history').then(hist => {
+  if (hist && hist.length) {
+    // Mark latest as already seen — never animate on first load
+    const latest = hist[0];
+    ultimoVencedor = latest.numero + String(latest.hora);
+    try { localStorage.setItem('aarn_ultimo_vencedor', ultimoVencedor); } catch(e) {}
+
+    // Populate history panel without animation
+    tvVencedores = hist.slice(0, 5);
+    renderTvHistory();
+  }
+  // Only start polling AFTER we know what's already in history
+  setInterval(checkNewWinner, 1000);
+}).catch(() => {
+  // If API fails, still start polling
+  setInterval(checkNewWinner, 1000);
+});
+
 setInterval(refreshStats, 15000);
-setInterval(checkNewWinner, 1000);
 setInterval(updateCountdown, 1000);
 </script>
 </body>
