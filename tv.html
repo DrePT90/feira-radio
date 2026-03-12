@@ -154,6 +154,22 @@
 
     @keyframes fadeIn { from{opacity:0} to{opacity:1} }
 
+    /* COUNTDOWN */
+    .countdown-big {
+      position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%);
+      text-align: center; z-index: 10;
+      opacity: 0; transition: opacity 0.5s;
+    }
+    .countdown-big.show { opacity: 1; }
+    .countdown-label {
+      font-size: 12px; letter-spacing: 4px; color: #4a5a7a;
+      text-transform: uppercase; margin-bottom: 6px;
+    }
+    .countdown-time {
+      font-size: 36px; font-weight: 900; color: #ffcc00;
+      letter-spacing: 4px; text-shadow: 0 0 30px rgba(255,204,0,0.4);
+    }
+
     /* ── FOOTER ── */
     .tv-footer {
       position: fixed; bottom: 0; left: 0; right: 0;
@@ -188,11 +204,7 @@
   <div class="tv-stats">
     <div class="tv-stat">
       <div class="tv-stat-val green" id="tv-presentes">-</div>
-      <div class="tv-stat-label">Presentes</div>
-    </div>
-    <div class="tv-stat">
-      <div class="tv-stat-val blue" id="tv-total">-</div>
-      <div class="tv-stat-label">Registados</div>
+      <div class="tv-stat-label">Visitantes</div>
     </div>
   </div>
   <div class="tv-clock" id="tv-clock">--:--</div>
@@ -215,7 +227,14 @@
 <!-- FOOTER -->
 <div class="tv-footer">
   <span class="live-dot"></span>
-  <span class="tv-footer-text">Em direto &nbsp;|&nbsp; Escola Sec. Francisco de Holanda, Guimarães &nbsp;|&nbsp; 21 de Março de 2026</span>
+  <span class="tv-footer-text">Escola Sec. Francisco de Holanda, Guimarães &nbsp;|&nbsp; 21 de Março de 2026 &nbsp;&nbsp;|&nbsp;&nbsp;</span>
+  <span id="tv-countdown" style="color:#ffcc00;letter-spacing:2px;font-size:13px;">Não há próximo sorteio</span>
+</div>
+
+<!-- COUNTDOWN DISPLAY -->
+<div class="countdown-big" id="countdown-big">
+  <div class="countdown-label">Próximo sorteio em</div>
+  <div class="countdown-time" id="countdown-time">--:--</div>
 </div>
 
 <script>
@@ -266,7 +285,6 @@ function apiCall(action, params = {}) {
 function refreshStats() {
   apiCall('stats').then(s => {
     document.getElementById('tv-presentes').textContent = s.presentes;
-    document.getElementById('tv-total').textContent     = s.total;
   }).catch(()=>{});
 }
 
@@ -350,11 +368,73 @@ function lancarConfetti() {
   }
 }
 
+// ── COUNTDOWN ──────────────────────────────────
+let proximoSorteioTV = null; // set externally via URL param or postMessage
+
+function setProximoSorteio(horaStr) {
+  proximoSorteioTV = horaStr; // "HH:MM" or null
+}
+
+function updateCountdown() {
+  const el     = document.getElementById('countdown-time');
+  const bigEl  = document.getElementById('countdown-big');
+  const footer = document.getElementById('tv-countdown');
+
+  if (!proximoSorteioTV) {
+    footer.textContent = 'Não há próximo sorteio';
+    footer.style.color = '#4a5a7a';
+    bigEl.classList.remove('show');
+    return;
+  }
+
+  const now   = new Date();
+  const parts = proximoSorteioTV.split(':');
+  const target = new Date();
+  target.setHours(parseInt(parts[0]), parseInt(parts[1]), 0, 0);
+
+  const diff = target - now;
+  if (diff <= 0) {
+    footer.textContent = 'Sorteio iminente!';
+    footer.style.color = '#ffcc00';
+    el.textContent = '00:00';
+    bigEl.classList.add('show');
+    return;
+  }
+
+  const mins = Math.floor(diff / 60000);
+  const secs = Math.floor((diff % 60000) / 1000);
+  const str  = String(mins).padStart(2,'0') + ':' + String(secs).padStart(2,'0');
+
+  el.textContent = str;
+  footer.textContent = 'Próximo sorteio em ' + str;
+  footer.style.color = '#ffcc00';
+
+  // Show big countdown when under 5 minutes
+  if (mins < 5) bigEl.classList.add('show');
+  else bigEl.classList.remove('show');
+}
+
+// Listen for countdown updates from main app via BroadcastChannel
+try {
+  const bc = new BroadcastChannel('aarn_sorteio');
+  bc.onmessage = (e) => {
+    if (e.data && e.data.proximoSorteio !== undefined) {
+      setProximoSorteio(e.data.proximoSorteio);
+    }
+  };
+} catch(e) {}
+
+// Also check URL param ?proximo=HH:MM for manual testing
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('proximo')) setProximoSorteio(urlParams.get('proximo'));
+
 // Init
 refreshStats();
 checkNewWinner();
+updateCountdown();
 setInterval(refreshStats, 15000);
 setInterval(checkNewWinner, 5000);
+setInterval(updateCountdown, 1000);
 </script>
 </body>
 </html>
