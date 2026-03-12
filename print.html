@@ -5,208 +5,144 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cartao de Entrada — AARN 2026</title>
   <style>
+    /* ══════════════════════════════════════════════
+       TAMANHO DO CARTAO — altera aqui
+       Cada face tem 107mm × 67mm (largura × altura)
+       O cartao total dobrado tem 214mm × 67mm
+    ══════════════════════════════════════════════ */
+    :root {
+      --card-width:  214mm;
+      --card-height:  67mm;
+    }
+    /* ══════════════════════════════════════════════ */
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       background: #e8edf5;
       font-family: Arial, Helvetica, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 20px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      min-height: 100vh; padding: 20px;
     }
 
-    /* ── BOTÃO IMPRIMIR ── */
     .print-btn {
-      background: #0a1628;
-      color: #7ab8d4;
-      border: none;
-      padding: 14px 40px;
-      font-size: 15px;
-      font-weight: 700;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      border-radius: 8px;
-      cursor: pointer;
-      margin-bottom: 24px;
-      font-family: Arial, sans-serif;
+      background: #0a1628; color: #7ab8d4; border: none;
+      padding: 14px 40px; font-size: 15px; font-weight: 700;
+      letter-spacing: 3px; text-transform: uppercase;
+      border-radius: 8px; cursor: pointer; margin-bottom: 12px;
     }
     .print-btn:hover { background: #162440; }
+    .hint { color: #888; font-size: 12px; margin-bottom: 28px; text-align: center; letter-spacing: 1px; }
 
-    .hint {
-      color: #888;
-      font-size: 12px;
-      margin-bottom: 28px;
-      text-align: center;
-      letter-spacing: 1px;
-    }
-
-    /* ── CARTAO ── */
-    .card {
-      width: 148mm;   /* A5 landscape width = A4/2 */
-      height: 105mm;  /* A5 landscape height */
-      display: flex;
-      box-shadow: 0 8px 40px rgba(0,0,0,0.18);
-      border-radius: 4px;
-      overflow: hidden;
-      background: white;
+    /* WRAPPER com caixa de recorte */
+    .card-wrapper {
       position: relative;
+      width: var(--card-width);
+      height: var(--card-height);
     }
 
+    /* Borda de recorte */
+    .cut-border {
+      position: absolute; inset: 0;
+      border: 1.5px solid #888;
+      pointer-events: none; z-index: 10;
+    }
+    /* Marcas de canto */
+    .corner {
+      position: absolute; width: 12px; height: 12px;
+      border-color: #444; border-style: solid;
+    }
+    .corner.tl { top:-2px; left:-2px;   border-width: 2px 0 0 2px; }
+    .corner.tr { top:-2px; right:-2px;  border-width: 2px 2px 0 0; }
+    .corner.bl { bottom:-2px; left:-2px;  border-width: 0 0 2px 2px; }
+    .corner.br { bottom:-2px; right:-2px; border-width: 0 2px 2px 0; }
+
+    /* CARTAO */
+    .card {
+      width: 100%; height: 100%;
+      display: flex; background: white;
+      position: relative; overflow: hidden;
+    }
     /* linha de dobra */
     .card::after {
-      content: '';
-      position: absolute;
-      left: 50%; top: 8%; bottom: 8%;
-      width: 1px;
+      content: ''; position: absolute;
+      left: 50%; top: 6%; bottom: 6%;
       border-left: 2px dashed #ccd6e0;
       pointer-events: none;
     }
 
-    /* VERSO (esquerda) — logo AARN */
+    /* VERSO — fundo branco, logo centrado */
     .card-back {
-      width: 50%;
-      background: #0a1628;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
+      width: 50%; background: #ffffff;
+      display: flex; align-items: center; justify-content: center;
+      padding: 14px;
     }
     .card-back img {
-      width: 100%;
-      max-width: 120px;
-      margin-bottom: 12px;
-    }
-    .card-back p {
-      color: #7ab8d4;
-      font-size: 9px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      text-align: center;
-      line-height: 1.6;
+      max-width: 110px; max-height: 48px;
+      width: auto; object-fit: contain;
     }
 
-    /* FRENTE (direita) — dados da pessoa */
+    /* FRENTE — dados */
     .card-front {
-      width: 50%;
-      background: #ffffff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 16px 18px;
-      gap: 10px;
+      width: 50%; background: #ffffff;
+      border-left: 1px solid #e8edf5;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 10px 14px; gap: 6px;
     }
-
-    .card-front .evento {
-      font-size: 9px;
-      color: #aaa;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      text-align: center;
-    }
-
-    .card-front .nome {
-      font-size: 17px;
-      font-weight: 700;
-      color: #1a1a2e;
-      text-align: center;
-      line-height: 1.2;
-    }
-
-    .card-front .indicativo {
-      font-size: 13px;
-      color: #7ab8d4;
-      font-weight: 700;
-      letter-spacing: 2px;
-    }
-
-    .card-front .qr-wrap {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-    }
-    .card-front .qr-wrap img {
-      width: 80px;
-      height: 80px;
-    }
-
+    .card-front .evento { font-size: 7px; color: #aaa; letter-spacing: 2px; text-transform: uppercase; text-align: center; }
+    .card-front .nome   { font-size: 15px; font-weight: 700; color: #1a1a2e; text-align: center; line-height: 1.2; }
+    .card-front .indicativo { font-size: 12px; color: #7ab8d4; font-weight: 700; letter-spacing: 2px; }
+    .card-front .qr-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .card-front .qr-wrap img { width: 68px; height: 68px; }
     .card-front .numero {
-      background: #0a1628;
-      color: #7ab8d4;
-      font-size: 14px;
-      font-weight: 900;
-      letter-spacing: 4px;
-      padding: 4px 14px;
-      border-radius: 4px;
+      background: #0a1628; color: #7ab8d4;
+      font-size: 11px; font-weight: 900; letter-spacing: 3px;
+      padding: 3px 10px; border-radius: 3px;
     }
+    .card-front .data { font-size: 7px; color: #bbb; text-align: center; letter-spacing: 1px; }
 
-    .card-front .data {
-      font-size: 8px;
-      color: #ccc;
-      text-align: center;
-      letter-spacing: 1px;
-    }
-
-    /* ── PRINT ── */
     @media print {
-      body {
-        background: white;
-        padding: 0;
-        margin: 0;
-        min-height: unset;
-      }
+      body { background: white; padding: 0; margin: 0; min-height: unset; display: block; }
       .print-btn, .hint { display: none; }
-      .card {
-        width: 148mm;
-        height: 105mm;
-        box-shadow: none;
-        margin: 10mm auto;
-        page-break-inside: avoid;
-      }
-      /* linha de dobra visível na impressão */
-      .card::after {
-        border-left: 1px dashed #ccc;
-      }
+      .card-wrapper { margin: 15mm auto; page-break-inside: avoid; }
+      .card::after { border-left: 1px dashed #ccc; }
+      .cut-border { border-color: #666; }
     }
   </style>
 </head>
 <body>
 
-<button class="print-btn" onclick="window.print()">
-  Imprimir Cartao
-</button>
-<p class="hint">Dobra ao meio — frente: os teus dados | verso: logo AARN</p>
+<button class="print-btn" onclick="window.print()">Imprimir Cartao</button>
+<p class="hint">Recorta pela linha exterior &mdash; dobra ao meio pela linha tracejada</p>
 
-<div class="card">
-
-  <!-- VERSO — logo -->
-  <div class="card-back">
-    <img id="logo-img" src="" alt="AARN" />
-    <p id="evento-back"></p>
+<div class="card-wrapper">
+  <div class="cut-border">
+    <div class="corner tl"></div>
+    <div class="corner tr"></div>
+    <div class="corner bl"></div>
+    <div class="corner br"></div>
   </div>
-
-  <!-- FRENTE — dados -->
-  <div class="card-front">
-    <div class="evento" id="evento-front"></div>
-    <div class="nome" id="nome"></div>
-    <div class="indicativo" id="indicativo" style="display:none;"></div>
-    <div class="qr-wrap">
-      <img id="qr-img" src="" alt="QR Code" />
-      <div class="numero" id="numero"></div>
+  <div class="card">
+    <div class="card-back">
+      <img id="logo-img" src="" alt="AARN" />
     </div>
-    <div class="data" id="data-local"></div>
+    <div class="card-front">
+      <div class="evento" id="evento-front"></div>
+      <div class="nome" id="nome"></div>
+      <div class="indicativo" id="indicativo" style="display:none;"></div>
+      <div class="qr-wrap">
+        <img id="qr-img" src="" alt="QR Code" />
+        <div class="numero" id="numero"></div>
+      </div>
+      <div class="data" id="data-local"></div>
+    </div>
   </div>
-
 </div>
 
 <script>
-  // Lê parâmetros do URL
-  const params = new URLSearchParams(window.location.search);
+  const params     = new URLSearchParams(window.location.search);
   const nome       = params.get('nome')       || 'Participante';
   const numero     = params.get('numero')     || 'RF-???';
   const indicativo = params.get('indicativo') || '';
@@ -215,11 +151,9 @@
   const local      = params.get('local')      || 'Escola Sec. Francisco de Holanda, Guimaraes';
   const logoUrl    = params.get('logo')       || '';
 
-  // Preenche o cartao
-  document.getElementById('nome').textContent      = nome;
-  document.getElementById('numero').textContent    = numero;
+  document.getElementById('nome').textContent         = nome;
+  document.getElementById('numero').textContent       = numero;
   document.getElementById('evento-front').textContent = evento;
-  document.getElementById('evento-back').textContent  = evento + '\n' + data;
   document.getElementById('data-local').textContent   = data + ' | ' + local;
 
   if (indicativo) {
@@ -228,15 +162,13 @@
     el.style.display = 'block';
   }
 
-  // QR code
-  const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=6&data=' + encodeURIComponent(numero);
+  const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=6&data='
+              + encodeURIComponent(numero);
   document.getElementById('qr-img').src = qrUrl;
 
-  // Logo — usa logo.png do mesmo repositório GitHub Pages
   const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
   document.getElementById('logo-img').src = logoUrl || (baseUrl + 'logo.png');
 
-  // Título da página
   document.title = 'Cartao ' + numero + ' — ' + nome;
 </script>
 </body>
