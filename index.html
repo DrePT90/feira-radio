@@ -208,7 +208,7 @@
     </div>
     <div class="stat s-yellow">
       <div class="stat-value" id="s-pct">-</div>
-      <div class="stat-label">Validados</div>
+      <div class="stat-label">Taxa</div>
     </div>
   </div>
 </div>
@@ -345,7 +345,8 @@ function refreshStats() {
     .then(s => {
       document.getElementById('s-presentes').textContent = s.presentes;
       document.getElementById('s-total').textContent     = s.total;
-      document.getElementById('s-pct').textContent = s.presentes;
+      const pct = s.total > 0 ? Math.round(s.presentes / s.total * 100) : 0;
+      document.getElementById('s-pct').textContent = pct + '%';
     })
     .catch(() => {});
 }
