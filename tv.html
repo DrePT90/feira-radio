@@ -472,6 +472,7 @@ function lancarConfetti() {
 
 // ── SYNC CONFIG FROM SERVER ──────────────────────
 function sincronizarConfig() {
+  if (animating) return; // never update during animation
   sincronizando = true;
   apiCall('getAutoConfig').then(cfg => {
     sincronizando = false;
@@ -504,7 +505,7 @@ function updateCountdown() {
   const footer = document.getElementById('tv-countdown');
 
   if (!proximoSorteioTV) {
-    if (sincronizando) return; // wait for sync before clearing
+    if (sincronizando || animating) return;
     footer.textContent = 'Não há próximo sorteio';
     footer.style.color = '#8ba3c4';
     bigEl.classList.remove('show');
@@ -521,7 +522,9 @@ function updateCountdown() {
     footer.textContent = 'Sorteio iminente!';
     footer.style.color = '#f59e0b';
     el.textContent = '00:00';
-    bigEl.classList.add('show');
+    if (!animating) bigEl.classList.add('show');
+    // Force winner check 3 seconds after countdown hits 0
+    if (!animating) setTimeout(checkNewWinner, 3000);
     return;
   }
 
@@ -538,7 +541,7 @@ function updateCountdown() {
     tvBeepCountdown(secs);
   }
 
-  bigEl.classList.add('show');
+  if (!animating) bigEl.classList.add('show');
 }
 
 // Listen for countdown updates from main app via BroadcastChannel
