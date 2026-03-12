@@ -490,16 +490,22 @@
       </div>
       <div style="margin-bottom:12px;">
         <div style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-bottom:6px;">INTERVALO ENTRE SORTEIOS</div>
-        <select id="auto-intervalo"
-          style="width:100%;padding:10px;background:var(--bg);border:1px solid var(--border);
-                 border-radius:8px;color:var(--text);font-size:15px;font-family:inherit;outline:none;">
-          <option value="15">A cada 15 minutos</option>
-          <option value="30" selected>A cada 30 minutos</option>
-          <option value="45">A cada 45 minutos</option>
-          <option value="60">A cada 1 hora</option>
-          <option value="90">A cada 1h 30min</option>
-          <option value="120">A cada 2 horas</option>
-        </select>
+        <div style="display:flex;gap:8px;">
+          <input id="auto-intervalo-val" type="number" min="1" max="240" value="30" oninput="atualizarPreviewIntervalo()"
+            style="flex:1;padding:10px;background:var(--bg);border:1px solid var(--border);
+                   border-radius:8px;color:var(--text);font-size:15px;font-family:inherit;
+                   outline:none;text-align:center;" />
+          <select id="auto-intervalo-unit" onchange="atualizarPreviewIntervalo()"
+            style="padding:10px;background:var(--bg);border:1px solid var(--border);
+                   border-radius:8px;color:var(--text);font-size:14px;font-family:inherit;
+                   outline:none;">
+            <option value="1">min</option>
+            <option value="60">horas</option>
+          </select>
+        </div>
+        <div id="auto-intervalo-preview" style="font-size:10px;color:var(--muted);margin-top:6px;text-align:center;letter-spacing:1px;">
+          A cada 30 minutos
+        </div>
       </div>
       <div id="auto-proximo" style="font-size:11px;color:var(--muted);text-align:center;margin-bottom:12px;min-height:16px;"></div>
       <div style="display:flex;gap:10px;">
@@ -1349,12 +1355,36 @@ function restaurarAutoSorteio() {
     // Restore UI
     document.getElementById('auto-inicio').value    = cfg.inicio;
     document.getElementById('auto-fim').value        = cfg.fim;
-    document.getElementById('auto-intervalo').value  = cfg.intervalo;
+    // Restore interval — detect if hours or minutes
+    if (cfg.intervalo % 60 === 0 && cfg.intervalo >= 60) {
+      document.getElementById('auto-intervalo-val').value  = cfg.intervalo / 60;
+      document.getElementById('auto-intervalo-unit').value = 60;
+    } else {
+      document.getElementById('auto-intervalo-val').value  = cfg.intervalo;
+      document.getElementById('auto-intervalo-unit').value = 1;
+    }
+    atualizarPreviewIntervalo();
     const proximo = calcProximoSorteio(horaAtual(), cfg.intervalo);
     ativarAutoSorteioLocal(cfg.inicio, cfg.fim, cfg.intervalo, proximo);
   }).catch(()=>{});
 }
 
+
+function atualizarPreviewIntervalo() {
+  const val  = parseInt(document.getElementById('auto-intervalo-val').value) || 0;
+  const unit = parseInt(document.getElementById('auto-intervalo-unit').value) || 1;
+  const mins = val * unit;
+  let txt = '';
+  if (mins < 60) {
+    txt = 'A cada ' + mins + ' minuto' + (mins === 1 ? '' : 's');
+  } else {
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    txt = 'A cada ' + h + 'h' + (m > 0 ? ' ' + m + 'min' : '');
+  }
+  const el = document.getElementById('auto-intervalo-preview');
+  if (el) el.textContent = txt;
+}
 // ═══════════════════════════════════════════
 //  SORTEIO AUTOMATICO
 // ═══════════════════════════════════════════
@@ -1363,7 +1393,9 @@ let autoTimer = null, autoCheckInterval = null;
 function iniciarAutoSorteio() {
   const inicio    = document.getElementById('auto-inicio').value;
   const fim       = document.getElementById('auto-fim').value;
-  const intervalo = parseInt(document.getElementById('auto-intervalo').value);
+  const val  = parseInt(document.getElementById('auto-intervalo-val').value) || 30;
+  const unit = parseInt(document.getElementById('auto-intervalo-unit').value) || 1;
+  const intervalo = val * unit; // always in minutes
 
   if (!inicio || !fim) { alert('Define a hora de inicio e fim.'); return; }
   if (inicio >= fim)   { alert('A hora de inicio deve ser antes do fim.'); return; }
@@ -1380,7 +1412,8 @@ function ativarAutoSorteioLocal(inicio, fim, intervalo, proximoInicial) {
   // Disable inputs
   document.getElementById('auto-inicio').disabled    = true;
   document.getElementById('auto-fim').disabled        = true;
-  document.getElementById('auto-intervalo').disabled  = true;
+  document.getElementById('auto-intervalo-val').disabled  = true;
+  document.getElementById('auto-intervalo-unit').disabled = true;
   document.getElementById('auto-btn-start').disabled  = true;
   document.getElementById('auto-btn-stop').disabled   = false;
   document.getElementById('auto-status').textContent  = 'ATIVO';
@@ -1416,7 +1449,8 @@ function pararAutoSorteio() {
   autoCheckInterval = null;
   document.getElementById('auto-inicio').disabled    = false;
   document.getElementById('auto-fim').disabled        = false;
-  document.getElementById('auto-intervalo').disabled  = false;
+  document.getElementById('auto-intervalo-val').disabled  = false;
+  document.getElementById('auto-intervalo-unit').disabled = false;
   document.getElementById('auto-btn-start').disabled  = false;
   document.getElementById('auto-btn-stop').disabled   = true;
   document.getElementById('auto-status').textContent  = 'INATIVO';
