@@ -1394,6 +1394,11 @@ function pararAutoSorteio() {
   document.getElementById('auto-status').style.background = 'rgba(74,90,122,0.2)';
   document.getElementById('auto-status').style.color      = 'var(--muted)';
   document.getElementById('auto-proximo').textContent = '';
+  try {
+    const bc = new BroadcastChannel('aarn_sorteio');
+    bc.postMessage({ proximoSorteio: null });
+    bc.close();
+  } catch(e) {}
 }
 
 function horaAtual() {
@@ -1411,6 +1416,12 @@ function calcProximoSorteio(base, intervalo) {
 
 function atualizarProximo(hora) {
   document.getElementById('auto-proximo').textContent = 'Proximo sorteio as ' + hora;
+  // Envia para tv.html via BroadcastChannel
+  try {
+    const bc = new BroadcastChannel('aarn_sorteio');
+    bc.postMessage({ proximoSorteio: hora });
+    bc.close();
+  } catch(e) {}
 }
 </script>
 </body>
