@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Feira da Radio AARN 2026</title>
-  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+  <script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     :root {
@@ -717,13 +717,7 @@ setInterval(() => { if (API_URL) refreshStats(); }, 30000);
 // ═══════════════════════════════════════════
 //  SCANNER
 // ═══════════════════════════════════════════
-let scanning = false, videoStream = null, scanInterval = null, processing = false;
-
-function scanLoop() {
-  if (!scanning) return;
-  scanFrame();
-  requestAnimationFrame(scanLoop);
-}
+let scanning = false, processing = false, zxingReader = null;
 
 async function toggleScanner() {
   scanning ? stopScanner() : await startScanner();
@@ -731,48 +725,41 @@ async function toggleScanner() {
 
 async function startScanner() {
   try {
-    videoStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment', width:{ideal:1280}, height:{ideal:720} }
-    });
-    const video = document.getElementById('video');
-    video.srcObject = videoStream;
-    await video.play();
+    const hints = new Map();
+    hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [ZXing.BarcodeFormat.QR_CODE]);
+    hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+    zxingReader = new ZXing.BrowserMultiFormatReader(hints);
+
+    const devices = await ZXing.BrowserMultiFormatReader.listVideoInputDevices();
+    // Prefer back camera
+    const cam = devices.find(d => /back|rear|environment/i.test(d.label)) || devices[devices.length - 1];
+    const deviceId = cam ? cam.deviceId : undefined;
+
     scanning = true;
     document.getElementById('scan-btn').textContent = 'PARAR SCANNER';
     document.getElementById('scan-btn').classList.add('stop');
     document.getElementById('scan-overlay').classList.add('active');
-    scanLoop();
+
+    await zxingReader.decodeFromVideoDevice(deviceId, 'video', (result, err) => {
+      if (result && !processing) {
+        processing = true;
+        if (navigator.vibrate) navigator.vibrate([50]);
+        processQR(result.getText());
+      }
+    });
   } catch(err) {
-    alert('Nao foi possivel aceder a camara.\n' + err.message +
-          '\n\nCertifica-te que:\n1. Estás a usar Safari no iOS\n2. Permitiste acesso a camara nas Definicoes');
+    scanning = false;
+    alert('Nao foi possivel aceder a camara.\n' + err.message);
   }
 }
 
 function stopScanner() {
-  if (videoStream) { videoStream.getTracks().forEach(t => t.stop()); videoStream = null; }
-  scanInterval = null;
+  if (zxingReader) { zxingReader.reset(); zxingReader = null; }
   scanning = false; processing = false;
   document.getElementById('video').srcObject = null;
   document.getElementById('scan-btn').textContent = 'INICIAR SCANNER';
   document.getElementById('scan-btn').classList.remove('stop');
   document.getElementById('scan-overlay').classList.remove('active');
-}
-
-function scanFrame() {
-  if (!scanning || processing) return;
-  const video = document.getElementById('video');
-  if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
-  const canvas = document.getElementById('canvas');
-  canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(video, 0, 0);
-  const img  = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  const code = jsQR(img.data, img.width, img.height, { inversionAttempts:'dontInvert' });
-  if (code && code.data) {
-    processing = true;
-    if (navigator.vibrate) navigator.vibrate([50]);
-    processQR(code.data);
-  }
 }
 
 function processQR(numero) {
