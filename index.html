@@ -264,6 +264,12 @@
 <!-- LISTA TAB -->
 <div class="content" id="tab-lista">
   <div class="lista-section">
+    <input id="lista-search" type="text" placeholder="Pesquisar nome, indicativo ou numero..."
+      oninput="filtrarLista()"
+      style="width:100%;padding:14px;margin:12px 0 8px;background:var(--surface);
+             border:1px solid var(--border);border-radius:8px;color:var(--text);
+             font-family:'Courier New',monospace;font-size:14px;outline:none;
+             -webkit-appearance:none;" />
     <button class="refresh-btn" onclick="loadLista()">ATUALIZAR LISTA</button>
     <div id="lista-list"><div class="empty">A carregar...</div></div>
   </div>
@@ -626,13 +632,31 @@ function loadLista() {
     });
 }
 
+let _listaCompleta = [];
+
 function renderLista(lista) {
-  const el = document.getElementById('lista-list');
-  if (!lista || !lista.length) {
-    el.innerHTML = '<div class="empty">Nenhum registo ainda</div>';
+  _listaCompleta = lista || [];
+  filtrarLista();
+}
+
+function filtrarLista() {
+  const el     = document.getElementById('lista-list');
+  const search = (document.getElementById('lista-search').value || '').toLowerCase().trim();
+  const filtrada = search
+    ? _listaCompleta.filter(p =>
+        p.nome.toLowerCase().includes(search) ||
+        (p.indicativo || '').toLowerCase().includes(search) ||
+        (p.numero || '').toLowerCase().includes(search))
+    : _listaCompleta;
+
+  if (!filtrada.length) {
+    el.innerHTML = search
+      ? '<div class="empty">Nenhum resultado para "' + search + '"</div>'
+      : '<div class="empty">Nenhum registo ainda</div>';
     return;
   }
-  el.innerHTML = lista.map(p => `
+
+  el.innerHTML = filtrada.map(p => `
     <div class="lista-item">
       <span class="lista-badge ${p.presente === 'SIM' ? 'sim' : 'nao'}"
             onclick="togglePresente('${p.numero}', '${p.presente}')"
