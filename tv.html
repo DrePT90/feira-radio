@@ -352,11 +352,10 @@ function checkNewWinner() {
   apiCall('history').then(hist => {
     if (!hist || !hist.length) return;
     const latest = hist[0];
-    // Use numero + hora as unique key
-    const horaStr = typeof latest.hora === 'string' ? latest.hora : String(latest.hora);
-    const key = latest.numero + '|' + horaStr;
+    // Use only numero as key — unique per raffle, no format issues with hora
+    const key = latest.numero;
     if (ultimoVencedor === null) {
-      // First check — just mark as seen, never animate
+      // First check on page load — mark as seen, don't animate
       ultimoVencedor = key;
       return;
     }
@@ -374,8 +373,7 @@ function animarSorteio(vencedor) {
   const main = document.getElementById('tv-main');
   document.getElementById('countdown-big').classList.remove('show');
 
-  // Try to resume audio
-  if (tvAudioCtx && tvAudioCtx.state === 'suspended') tvAudioCtx.resume();
+
 
   let interval = 300;
   let elapsed  = 0;
@@ -387,20 +385,16 @@ function animarSorteio(vencedor) {
       <div class="spin-num" id="tv-spin">RF-???</div>
     </div>`;
 
-  // Play spin sound every tick
-  if (spinSoundInterval) clearInterval(spinSoundInterval);
-  spinSoundInterval = setInterval(() => tvSoundSpin(), 650);
+
 
   function tick() {
     elapsed += interval;
     if (elapsed >= TOTAL) {
-      if (spinSoundInterval) { clearInterval(spinSoundInterval); spinSoundInterval = null; }
       const el = document.getElementById('tv-spin');
       if (el) el.textContent = vencedor.numero;
       setTimeout(() => {
         mostrarVencedor(vencedor);
         lancarConfetti();
-        tvSoundWinner();
       }, 300);
       return;
     }
@@ -549,11 +543,6 @@ function updateCountdown() {
   el.textContent = str;
   footer.textContent = 'Próximo sorteio em ' + str;
   footer.style.color = '#f59e0b';
-
-  // Beep on last 15 seconds (only once per second)
-  if (mins === 0 && secs <= 15) {
-    tvBeepCountdown(secs);
-  }
 
   if (!animating) { bigEl.classList.add('show'); }
 }
