@@ -284,7 +284,7 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbyKdkiR2flJpHgr33maoiO6
 const FAKE_NUMS = ['RF-012','RF-037','RF-089','RF-004','RF-055','RF-071','RF-023','RF-099'];
 // ────────────────────────────────────────────────
 
-let ultimoVencedor = localStorage.getItem('aarn_ultimo_vencedor') || null;
+let ultimoVencedor = null; // always null on fresh page load — detect new winners from this session onwards
 let spinIdx = 0;
 let tvVencedores = [];
 try { tvVencedores = JSON.parse(localStorage.getItem('aarn_tv_vencedores') || '[]'); } catch(e) {}
@@ -348,14 +348,20 @@ function refreshStats() {
 
 // Poll for new winner every 5 seconds
 function checkNewWinner() {
-  if (animating) return; // don't poll during animation
+  if (animating) return;
   apiCall('history').then(hist => {
     if (!hist || !hist.length) return;
     const latest = hist[0];
-    const key = latest.numero + String(latest.hora);
+    // Use numero + hora as unique key
+    const horaStr = typeof latest.hora === 'string' ? latest.hora : String(latest.hora);
+    const key = latest.numero + '|' + horaStr;
+    if (ultimoVencedor === null) {
+      // First check — just mark as seen, never animate
+      ultimoVencedor = key;
+      return;
+    }
     if (ultimoVencedor !== key) {
       ultimoVencedor = key;
-      try { localStorage.setItem('aarn_ultimo_vencedor', key); } catch(e) {}
       animarSorteio(latest);
     }
   }).catch(()=>{});
@@ -598,21 +604,15 @@ updateCountdown();
 
 apiCall('history').then(hist => {
   if (hist && hist.length) {
-    // Mark latest as already seen — never animate on first load
-    const latest = hist[0];
-    ultimoVencedor = latest.numero + String(latest.hora);
-    try { localStorage.setItem('aarn_ultimo_vencedor', ultimoVencedor); } catch(e) {}
-
     // Populate history panel without animation
     tvVencedores = hist.slice(0, 5);
     renderTvHistory();
+    // Mark latest as seen — ultimoVencedor=null triggers one silent mark on first checkNewWinner
   }
-  // Only start polling AFTER we know what's already in history
   setInterval(checkNewWinner, 1000);
 }).catch(() => {
   setInterval(checkNewWinner, 1000);
 });
-// Guard against double init — clear duplicates handled by animating flag
 
 setInterval(refreshStats, 15000);
 setInterval(updateCountdown, 1000);
