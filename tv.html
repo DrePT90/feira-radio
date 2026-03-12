@@ -468,10 +468,19 @@ function lancarConfetti() {
 // ── SYNC CONFIG FROM SERVER ──────────────────────
 function sincronizarConfig() {
   apiCall('getAutoConfig').then(cfg => {
-    if (cfg && cfg.ativo && cfg.proximo) {
-      setProximoSorteio(cfg.proximo);
-    } else if (!cfg || !cfg.ativo) {
+    if (!cfg || !cfg.ativo) {
       setProximoSorteio(null);
+      return;
+    }
+    if (cfg.proximo) {
+      // Só atualiza se a hora for futura
+      const parts  = cfg.proximo.split(':');
+      const target = new Date();
+      target.setHours(parseInt(parts[0]), parseInt(parts[1]), 0, 0);
+      if (target > new Date()) {
+        setProximoSorteio(cfg.proximo);
+      }
+      // Se já passou, mantém o countdown atual — não apaga
     }
   }).catch(()=>{});
 }
