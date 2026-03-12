@@ -188,9 +188,140 @@
       border-radius:8px; cursor:pointer; font-family:'Courier New',monospace;
       font-size:12px; letter-spacing:2px;
     }
+
+    /* ══ BOOT SCREEN ══ */
+    #boot-screen {
+      position:fixed; inset:0; background:var(--bg);
+      display:flex; flex-direction:column;
+      align-items:center; justify-content:center;
+      z-index:9999; transition:opacity 0.6s ease;
+    }
+    #boot-screen.fade-out { opacity:0; pointer-events:none; }
+
+    .boot-logo {
+      display:flex; gap:6px; margin-bottom:40px;
+    }
+    .boot-letter {
+      font-size:64px; font-weight:900; color:var(--green);
+      font-family:'Courier New',monospace;
+      opacity:0; transform:translateY(30px);
+      animation: letterIn 0.4s forwards;
+      text-shadow: 0 0 30px rgba(0,255,157,0.5);
+    }
+    .boot-letter:nth-child(1) { animation-delay:0.1s; }
+    .boot-letter:nth-child(2) { animation-delay:0.3s; }
+    .boot-letter:nth-child(3) { animation-delay:0.5s; }
+    .boot-letter:nth-child(4) { animation-delay:0.7s; }
+    @keyframes letterIn {
+      to { opacity:1; transform:translateY(0); }
+    }
+
+    .boot-subtitle {
+      color:var(--muted); font-size:11px; letter-spacing:4px;
+      text-transform:uppercase; margin-bottom:48px;
+      font-family:'Courier New',monospace;
+      opacity:0; animation: fadeIn 0.5s 1s forwards;
+    }
+    @keyframes fadeIn { to { opacity:1; } }
+
+    .boot-progress-wrap {
+      width:200px; height:3px; background:var(--border);
+      border-radius:2px; margin-bottom:48px; overflow:hidden;
+      opacity:0; animation: fadeIn 0.3s 0.8s forwards;
+    }
+    .boot-progress-bar {
+      height:100%; background:var(--green);
+      box-shadow:0 0 8px var(--green);
+      width:0%; transition:width 0.1s linear;
+    }
+
+    /* PIN */
+    #pin-screen {
+      display:none; flex-direction:column;
+      align-items:center; width:100%;
+    }
+    #pin-screen.show { display:flex; }
+
+    .pin-title {
+      color:var(--text); font-size:13px; letter-spacing:3px;
+      text-transform:uppercase; margin-bottom:24px;
+      font-family:'Courier New',monospace;
+    }
+    .pin-dots {
+      display:flex; gap:14px; margin-bottom:32px;
+    }
+    .pin-dot {
+      width:16px; height:16px; border-radius:50%;
+      border:2px solid var(--border); background:transparent;
+      transition:all 0.15s;
+    }
+    .pin-dot.filled { background:var(--green); border-color:var(--green); box-shadow:0 0 8px var(--green); }
+    .pin-dot.error  { background:var(--red);   border-color:var(--red); }
+
+    .pin-pad {
+      display:grid; grid-template-columns:repeat(3,1fr);
+      gap:12px; width:240px;
+    }
+    .pin-key {
+      height:64px; background:var(--surface);
+      border:1px solid var(--border); border-radius:12px;
+      color:var(--text); font-size:22px; font-weight:700;
+      cursor:pointer; font-family:'Courier New',monospace;
+      display:flex; align-items:center; justify-content:center;
+      transition:all 0.1s; user-select:none;
+    }
+    .pin-key:active { background:var(--border); transform:scale(0.94); }
+    .pin-key.wide { grid-column:span 2; }
+    .pin-key.del  { color:var(--red); }
+    .pin-error {
+      color:var(--red); font-size:12px; letter-spacing:2px;
+      margin-top:20px; font-family:'Courier New',monospace;
+      opacity:0; transition:opacity 0.2s;
+    }
+    .pin-error.show { opacity:1; }
   </style>
 </head>
 <body>
+
+<!-- BOOT SCREEN -->
+<div id="boot-screen">
+  <div class="boot-logo">
+    <span class="boot-letter">A</span>
+    <span class="boot-letter">A</span>
+    <span class="boot-letter">R</span>
+    <span class="boot-letter">N</span>
+  </div>
+  <div class="boot-subtitle">Registration App v2.0</div>
+  <div class="boot-progress-wrap">
+    <div class="boot-progress-bar" id="boot-bar"></div>
+  </div>
+
+  <!-- PIN -->
+  <div id="pin-screen">
+    <div class="pin-title">Introduz o PIN</div>
+    <div class="pin-dots">
+      <div class="pin-dot" id="pd0"></div>
+      <div class="pin-dot" id="pd1"></div>
+      <div class="pin-dot" id="pd2"></div>
+      <div class="pin-dot" id="pd3"></div>
+    </div>
+    <div class="pin-pad">
+      <button class="pin-key" onclick="pinKey('1')">1</button>
+      <button class="pin-key" onclick="pinKey('2')">2</button>
+      <button class="pin-key" onclick="pinKey('3')">3</button>
+      <button class="pin-key" onclick="pinKey('4')">4</button>
+      <button class="pin-key" onclick="pinKey('5')">5</button>
+      <button class="pin-key" onclick="pinKey('6')">6</button>
+      <button class="pin-key" onclick="pinKey('7')">7</button>
+      <button class="pin-key" onclick="pinKey('8')">8</button>
+      <button class="pin-key" onclick="pinKey('9')">9</button>
+      <button class="pin-key wide" onclick="pinKey('0')">0</button>
+      <button class="pin-key del" onclick="pinDel()">&#x232B;</button>
+    </div>
+    <div class="pin-error" id="pin-error">PIN incorreto</div>
+  </div>
+</div>
+
 
 <!-- HEADER -->
 <div class="header">
@@ -674,6 +805,69 @@ function togglePresente(numero, estadoAtual) {
   apiCall('togglePresente', { numero, estado: novoEstado })
     .then(() => loadLista())
     .catch(() => alert('Erro ao atualizar. Tenta novamente.'));
+}
+
+// ═══════════════════════════════════════════
+//  BOOT + PIN
+// ═══════════════════════════════════════════
+const PIN_CORRETO = '2026'; // <- muda o PIN aqui
+let pinAtual = '';
+
+// Progress bar animation
+let prog = 0;
+const barEl = document.getElementById('boot-bar');
+const progInterval = setInterval(() => {
+  prog += Math.random() * 8 + 2;
+  if (prog >= 100) { prog = 100; clearInterval(progInterval); }
+  barEl.style.width = prog + '%';
+}, 80);
+
+// After 2.2s show PIN
+setTimeout(() => {
+  document.getElementById('pin-screen').classList.add('show');
+}, 2200);
+
+function pinKey(d) {
+  if (pinAtual.length >= 4) return;
+  pinAtual += d;
+  updateDots();
+  if (pinAtual.length === 4) {
+    setTimeout(checkPin, 200);
+  }
+}
+
+function pinDel() {
+  pinAtual = pinAtual.slice(0, -1);
+  updateDots();
+  document.getElementById('pin-error').classList.remove('show');
+}
+
+function updateDots() {
+  for (let i = 0; i < 4; i++) {
+    const dot = document.getElementById('pd' + i);
+    dot.className = 'pin-dot' + (i < pinAtual.length ? ' filled' : '');
+  }
+}
+
+function checkPin() {
+  if (pinAtual === PIN_CORRETO) {
+    // Correct — fade out boot screen
+    document.getElementById('boot-screen').classList.add('fade-out');
+    setTimeout(() => {
+      document.getElementById('boot-screen').style.display = 'none';
+      if (API_URL) { refreshStats(); loadHistory(); }
+    }, 600);
+  } else {
+    // Wrong — shake and reset
+    for (let i = 0; i < 4; i++) {
+      document.getElementById('pd' + i).className = 'pin-dot error';
+    }
+    document.getElementById('pin-error').classList.add('show');
+    setTimeout(() => {
+      pinAtual = '';
+      updateDots();
+    }, 800);
+  }
 }
 </script>
 </body>
