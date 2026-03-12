@@ -179,6 +179,26 @@
       padding: 4px 10px; border-radius: 4px; font-size: 10px; cursor: pointer;
       font-family: 'Courier New', monospace;
     }
+    /* LISTA */
+    .lista-section { padding:0 16px 16px; }
+    .lista-item {
+      display:flex; align-items:center; gap:10px;
+      padding:13px 0; border-bottom:1px solid var(--border); font-size:14px;
+    }
+    .lista-badge {
+      font-size:10px; font-weight:700; padding:3px 8px; border-radius:4px;
+      letter-spacing:1px; flex-shrink:0;
+    }
+    .lista-badge.sim { background:rgba(0,255,157,0.15); color:var(--green); }
+    .lista-badge.nao { background:rgba(74,90,122,0.2);  color:var(--muted); }
+    .lista-nome { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .lista-num  { color:var(--muted); font-size:11px; flex-shrink:0; }
+    .refresh-btn {
+      width:100%; padding:12px; margin:12px 0;
+      background:none; border:1px solid var(--border); color:var(--muted);
+      border-radius:8px; cursor:pointer; font-family:'Courier New',monospace;
+      font-size:12px; letter-spacing:2px;
+    }
   </style>
 </head>
 <body>
@@ -217,6 +237,7 @@
 <div class="tabs">
   <div class="tab active" data-tab="scanner">Scanner</div>
   <div class="tab"        data-tab="raffle" >Sorteio</div>
+  <div class="tab"        data-tab="lista"  >Registados</div>
 </div>
 
 <!-- SCANNER TAB -->
@@ -257,12 +278,20 @@
   </div>
 </div>
 
+<!-- LISTA TAB -->
+<div class="content" id="tab-lista">
+  <div class="lista-section">
+    <button class="refresh-btn" onclick="loadLista()">ATUALIZAR LISTA</button>
+    <div id="lista-list"><div class="empty">A carregar...</div></div>
+  </div>
+</div>
+
 <script>
 // ═══════════════════════════════════════════
 //  CONFIGURAÇÃO DA API
 //  Muda esta variável para o URL do teu Apps Script
 // ═══════════════════════════════════════════
-let API_URL = localStorage.getItem('aarn_api_url') || '';
+let API_URL = localStorage.getItem('aarn_api_url') || 'https://script.google.com/macros/s/AKfycbyKdkiR2flJpHgr33maoiO6XeioEj6bnxudrqaoW0ufFJh5X1s5dqilCcwKVsOJkMEueQ/exec';
 
 function configAPI() {
   const url = prompt('Cola aqui o URL do teu Google Apps Script:\n(termina em /exec)', API_URL);
@@ -334,6 +363,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     tab.classList.add('active');
     document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
     if (tab.dataset.tab === 'raffle') loadHistory();
+    if (tab.dataset.tab === 'lista') loadLista();
   });
 });
 
@@ -539,6 +569,32 @@ function renderHistory() {
         <div class="hist-name">${h.nome}${h.indicativo ? ' - ' + h.indicativo : ''}</div>
       </div>
       <div class="hist-time">${h.hora}</div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════
+//  LISTA DE REGISTADOS
+// ═══════════════════════════════════════════
+function loadLista() {
+  document.getElementById('lista-list').innerHTML = '<div class="empty">A carregar...</div>';
+  apiCall('registados')
+    .then(lista => renderLista(lista))
+    .catch(() => {
+      document.getElementById('lista-list').innerHTML = '<div class="empty">Erro ao carregar</div>';
+    });
+}
+
+function renderLista(lista) {
+  const el = document.getElementById('lista-list');
+  if (!lista || !lista.length) {
+    el.innerHTML = '<div class="empty">Nenhum registo ainda</div>';
+    return;
+  }
+  el.innerHTML = lista.map(p => `
+    <div class="lista-item">
+      <span class="lista-badge ${p.presente === 'SIM' ? 'sim' : 'nao'}">${p.presente === 'SIM' ? 'PRESENTE' : 'AUSENTE'}</span>
+      <span class="lista-nome">${p.nome}${p.indicativo ? ' <span style="color:var(--muted);font-size:11px;">- ' + p.indicativo + '</span>' : ''}</span>
+      <span class="lista-num">${p.numero}</span>
     </div>`).join('');
 }
 </script>
