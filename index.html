@@ -339,13 +339,22 @@
     @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
     .modal-handle {
       width: 40px; height: 4px; border-radius: 2px;
-      background: var(--border); margin: 0 auto 16px;
+      background: var(--border); margin: 0 auto 12px;
+      cursor: pointer;
+    }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 20px 14px; border-bottom: 1px solid var(--border); margin-bottom: 4px;
     }
     .modal-title {
       font-size: 13px; font-weight: 700; letter-spacing: 2px;
-      text-transform: uppercase; padding: 0 20px 16px;
-      border-bottom: 1px solid var(--border); margin-bottom: 4px;
-      color: var(--muted);
+      text-transform: uppercase; color: var(--muted);
+    }
+    .modal-close {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--border); border: none; color: var(--text);
+      font-size: 16px; cursor: pointer; display: flex;
+      align-items: center; justify-content: center; flex-shrink: 0;
     }
   </style>
 </head>
@@ -397,7 +406,7 @@
   <div class="header-top">
     <div class="live-dot"></div>
     <span style="font-size:22px;">&#x1F4FB;</span>
-    <h1 id="main-title">AARN Registration App v2.0</h1>
+    <h1 id="main-title">CT7ATW Event APP</h1>
     <span style="color:var(--muted);font-size:11px;" id="clock"></span>
   </div>
   <div class="stats-bar">
@@ -527,8 +536,8 @@
   </div>
 </div>
 
-<!-- STATS TAB (moved to modal) -->
-<div class="content" id="tab-stats" style="display:none!important;">
+<!-- STATS TAB removed -->
+<div style="display:none!important;">
   <div style="padding:16px;">
     <div class="section-title" style="margin-bottom:16px;">- Entradas por hora -</div>
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
@@ -621,10 +630,13 @@
 </div>
 
 <!-- MODAL STATS -->
-<div class="modal-overlay" id="modal-stats" onclick="fecharModal('modal-stats')">
-  <div class="modal-sheet" onclick="event.stopPropagation()">
-    <div class="modal-handle"></div>
-    <div class="modal-title">Estatisticas — Entradas por hora</div>
+<div class="modal-overlay" id="modal-stats">
+  <div class="modal-sheet">
+    <div class="modal-handle" onclick="fecharModal('modal-stats')"></div>
+    <div class="modal-header">
+      <div class="modal-title">Estatisticas — Entradas por hora</div>
+      <button class="modal-close" onclick="fecharModal('modal-stats')">&times;</button>
+    </div>
     <div style="padding:16px;">
       <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
         <canvas id="chart-entradas" height="200"></canvas>
@@ -649,23 +661,14 @@
 </div>
 
 <!-- MODAL CONFIG -->
-<div class="modal-overlay" id="modal-config" onclick="fecharModal('modal-config')">
-  <div class="modal-sheet" onclick="event.stopPropagation()">
-    <div class="modal-handle"></div>
-    <div class="modal-title">Definicoes</div>
+<div class="modal-overlay" id="modal-config">
+  <div class="modal-sheet">
+    <div class="modal-handle" onclick="fecharModal('modal-config')"></div>
+    <div class="modal-header">
+      <div class="modal-title">Definicoes</div>
+      <button class="modal-close" onclick="fecharModal('modal-config')">&times;</button>
+    </div>
     <div style="padding:16px;">
-
-      <div class="section-title" style="margin-bottom:16px;">- Titulo da App -</div>
-      <input id="cfg-title" type="text" value="Event Manager APP"
-        style="width:100%;padding:14px;background:var(--bg);border:1px solid var(--border);
-               border-radius:8px;color:var(--text);font-family:inherit;font-size:15px;
-               outline:none;margin-bottom:10px;" />
-      <button onclick="aplicarTitulo()"
-        style="width:100%;padding:14px;background:var(--blue);color:#fff;border:none;
-               border-radius:8px;cursor:pointer;font-size:14px;font-weight:700;
-               letter-spacing:1px;margin-bottom:28px;">
-        APLICAR TITULO
-      </button>
 
       <div class="section-title" style="margin-bottom:16px;">- Tema -</div>
       <div style="display:flex;gap:12px;margin-bottom:28px;">
@@ -1186,7 +1189,7 @@ function checkPin() {
     document.getElementById('boot-screen').classList.add('fade-out');
     setTimeout(() => {
       document.getElementById('boot-screen').style.display = 'none';
-      document.getElementById('main-title').textContent = 'Event Manager APP';
+      // title is fixed
       if (API_URL) { refreshStats(); loadHistory(); restaurarAutoSorteio(); }
     }, 600);
   } else {
@@ -1271,9 +1274,23 @@ function alterarPin() {
 let chartInstance = null;
 
 function loadStats() {
+  const canvas = document.getElementById('chart-entradas');
+  if (!canvas) return;
+  const ctx2 = canvas.getContext('2d');
+  ctx2.clearRect(0,0,canvas.width,canvas.height);
   apiCall('statsHora')
-    .then(data => renderChart(data))
-    .catch(() => {});
+    .then(data => {
+      if (!data || !data.length) {
+        document.getElementById('stat-pico-hora').textContent = '-';
+        document.getElementById('stat-media-hora').textContent = '-';
+        document.getElementById('stat-ultima-hora').textContent = '-';
+        return;
+      }
+      renderChart(data);
+    })
+    .catch(() => {
+      document.getElementById('stat-pico-hora').textContent = 'Erro';
+    });
 }
 
 function renderChart(data) {
