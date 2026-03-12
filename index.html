@@ -373,7 +373,7 @@
     <span class="boot-letter">R</span>
     <span class="boot-letter">N</span>
   </div>
-  <div class="boot-subtitle">Registration App v2.2</div>
+  <div class="boot-subtitle">Registration App v2.0</div>
   <div class="boot-progress-wrap">
     <div class="boot-progress-bar" id="boot-bar"></div>
   </div>
@@ -922,10 +922,9 @@ function startRaffle() {
   const anim = setInterval(() => {
     document.getElementById('spin-num').textContent = FAKE_NUMS[spinIdx++ % FAKE_NUMS.length];
   }, 80);
-  setTimeout(() => {
-    apiCall('raffle')
-      .then(r => {
-        clearInterval(anim);
+  apiCall('raffle')
+    .then(r => {
+      clearInterval(anim);
         disp.className = 'raffle-display';
         if (!r.success) {
           disp.innerHTML = `<div style="color:var(--red);font-size:13px;">${r.message}</div>`;
@@ -944,20 +943,18 @@ function startRaffle() {
         raffleHist.unshift({...v, hora: r.hora});
         renderHistory();
         btn.disabled = false;
-        // Envia vencedor para tv.html
         try {
           const bc = new BroadcastChannel('aarn_sorteio');
           bc.postMessage({ novoVencedor: { ...v, hora: r.hora } });
           bc.close();
         } catch(e) {}
       })
-      .catch(() => {
-        clearInterval(anim);
-        disp.className = 'raffle-display';
-        disp.innerHTML = '<div style="color:var(--red);">Erro de ligacao</div>';
-        btn.disabled = false;
-      });
-  }, 7000);
+    .catch(() => {
+      clearInterval(anim);
+      disp.className = 'raffle-display';
+      disp.innerHTML = '<div style="color:var(--red);">Erro de ligacao</div>';
+      btn.disabled = false;
+    });
 }
 
 function loadHistory() {
