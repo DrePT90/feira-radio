@@ -284,6 +284,61 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbyKdkiR2flJpHgr33maoiO6
 const FAKE_NUMS = ['RF-012','RF-037','RF-089','RF-004','RF-055','RF-071','RF-023','RF-099'];
 // ────────────────────────────────────────────────
 
+
+// ── TV AUDIO ────────────────────────────────────
+let tvAudioCtx = null;
+let spinSoundInterval = null;
+
+function getTvAudio() {
+  if (!tvAudioCtx) {
+    try { tvAudioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+  }
+  if (tvAudioCtx && tvAudioCtx.state === 'suspended') tvAudioCtx.resume();
+  return tvAudioCtx;
+}
+
+function tvTone(freq, duration, type, vol, delay) {
+  type  = type  || 'sine';
+  vol   = vol   || 0.3;
+  delay = delay || 0;
+  try {
+    const ctx = getTvAudio();
+    if (!ctx) return;
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = type;
+    const t = ctx.currentTime + delay;
+    osc.frequency.setValueAtTime(freq, t);
+    gain.gain.setValueAtTime(vol, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
+    osc.start(t); osc.stop(t + duration);
+  } catch(e) {}
+}
+
+function tvBeepCountdown(secsLeft) {
+  if (secsLeft <= 5) {
+    tvTone(880, 0.08, 'sine', 0.4);
+  } else if (secsLeft <= 15) {
+    tvTone(660, 0.12, 'sine', 0.3);
+  }
+}
+
+function tvSoundSpin() {
+  var freqs = [400, 500, 350, 600, 450, 700, 380, 550];
+  freqs.forEach(function(f, i) {
+    tvTone(f, 0.05, 'square', 0.12, i * 0.07);
+  });
+}
+
+function tvSoundWinner() {
+  // Fanfare — ascending triumphant chords
+  [523, 659, 784].forEach(function(f) { tvTone(f, 0.4, 'sine', 0.2, 0); });
+  [587, 740, 880].forEach(function(f) { tvTone(f, 0.4, 'sine', 0.2, 0.35); });
+  [784, 988, 1175].forEach(function(f) { tvTone(f, 0.8, 'sine', 0.25, 0.7); });
+}
+// ─────────────────────────────────────────────────
+
 let ultimoVencedor = null; // always null on fresh page load — detect new winners from this session onwards
 let spinIdx = 0;
 let tvVencedores = [];
@@ -390,11 +445,13 @@ function animarSorteio(vencedor) {
   function tick() {
     elapsed += interval;
     if (elapsed >= TOTAL) {
+      try { if (spinSoundInterval) { clearInterval(spinSoundInterval); spinSoundInterval = null; } } catch(e) {}
       const el = document.getElementById('tv-spin');
       if (el) el.textContent = vencedor.numero;
       setTimeout(() => {
         mostrarVencedor(vencedor);
         lancarConfetti();
+        try { tvSoundWinner(); } catch(e) {}
       }, 300);
       return;
     }
@@ -531,6 +588,11 @@ function updateCountdown() {
     footer.style.color = '#f59e0b';
     el.textContent = '00:00';
     if (!animating) { bigEl.classList.add('show'); }
+
+  // Suspense beeps — wrapped safely
+  try {
+    if (!animating && mins === 0 && secs <= 15) tvBeepCountdown(secs);
+  } catch(e) {}
     // Force winner check 3 seconds after countdown hits 0
     if (!animating) setTimeout(checkNewWinner, 3000);
     return;
@@ -545,6 +607,11 @@ function updateCountdown() {
   footer.style.color = '#f59e0b';
 
   if (!animating) { bigEl.classList.add('show'); }
+
+  // Suspense beeps — wrapped safely
+  try {
+    if (!animating && mins === 0 && secs <= 15) tvBeepCountdown(secs);
+  } catch(e) {}
 }
 
 // Listen for countdown updates from main app via BroadcastChannel
