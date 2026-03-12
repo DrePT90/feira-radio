@@ -1352,7 +1352,7 @@ function restaurarAutoSorteio() {
     document.getElementById('auto-inicio').value    = cfg.inicio;
     document.getElementById('auto-fim').value        = cfg.fim;
     document.getElementById('auto-intervalo').value  = cfg.intervalo;
-    const proximo = cfg.proximo && cfg.proximo > agora ? cfg.proximo : calcProximoSorteio(agora, cfg.intervalo);
+    const proximo = calcProximoSorteio(horaAtual(), cfg.intervalo);
     ativarAutoSorteioLocal(cfg.inicio, cfg.fim, cfg.intervalo, proximo);
   }).catch(()=>{});
 }
@@ -1370,7 +1370,7 @@ function iniciarAutoSorteio() {
   if (!inicio || !fim) { alert('Define a hora de inicio e fim.'); return; }
   if (inicio >= fim)   { alert('A hora de inicio deve ser antes do fim.'); return; }
 
-  const proximo = calcProximoSorteio(inicio, intervalo);
+  const proximo = calcProximoSorteio(horaAtual(), intervalo);
 
   // Save config to server first
   apiCall('setAutoConfig', { inicio, fim, intervalo, proximo })
@@ -1398,7 +1398,8 @@ function ativarAutoSorteioLocal(inicio, fim, intervalo, proximoInicial) {
     if (agora < inicio) return;
 
     if (agora >= proximoSorteio) {
-      proximoSorteio = calcProximoSorteio(agora, intervalo);
+      // Calculate next BEFORE firing to avoid double trigger
+      proximoSorteio = calcProximoSorteio(horaAtual(), intervalo);
       atualizarProximo(proximoSorteio);
       apiCall('setAutoConfig', { inicio, fim, intervalo, proximo: proximoSorteio }).catch(()=>{});
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
