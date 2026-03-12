@@ -1187,7 +1187,7 @@ function checkPin() {
     setTimeout(() => {
       document.getElementById('boot-screen').style.display = 'none';
       document.getElementById('main-title').textContent = 'Event Manager APP';
-      if (API_URL) { refreshStats(); loadHistory(); }
+      if (API_URL) { refreshStats(); loadHistory(); restaurarAutoSorteio(); }
     }, 600);
   } else {
     // Wrong — shake and reset
@@ -1341,6 +1341,22 @@ function renderChart(data) {
   });
 }
 
+
+// Restore auto sorteio state from server on load
+function restaurarAutoSorteio() {
+  apiCall('getAutoConfig').then(cfg => {
+    if (!cfg || !cfg.ativo) return;
+    const agora = horaAtual();
+    if (agora >= cfg.fim) { apiCall('clearAutoConfig').catch(()=>{}); return; }
+    // Restore UI
+    document.getElementById('auto-inicio').value    = cfg.inicio;
+    document.getElementById('auto-fim').value        = cfg.fim;
+    document.getElementById('auto-intervalo').value  = cfg.intervalo;
+    const proximo = cfg.proximo && cfg.proximo > agora ? cfg.proximo : calcProximoSorteio(agora, cfg.intervalo);
+    ativarAutoSorteioLocal(cfg.inicio, cfg.fim, cfg.intervalo, proximo);
+  }).catch(()=>{});
+}
+
 // ═══════════════════════════════════════════
 //  SORTEIO AUTOMATICO
 // ═══════════════════════════════════════════
@@ -1354,6 +1370,15 @@ function iniciarAutoSorteio() {
   if (!inicio || !fim) { alert('Define a hora de inicio e fim.'); return; }
   if (inicio >= fim)   { alert('A hora de inicio deve ser antes do fim.'); return; }
 
+  const proximo = calcProximoSorteio(inicio, intervalo);
+
+  // Save config to server first
+  apiCall('setAutoConfig', { inicio, fim, intervalo, proximo })
+    .then(() => ativarAutoSorteioLocal(inicio, fim, intervalo, proximo))
+    .catch(() => ativarAutoSorteioLocal(inicio, fim, intervalo, proximo));
+}
+
+function ativarAutoSorteioLocal(inicio, fim, intervalo, proximoInicial) {
   // Disable inputs
   document.getElementById('auto-inicio').disabled    = true;
   document.getElementById('auto-fim').disabled        = true;
@@ -1364,8 +1389,7 @@ function iniciarAutoSorteio() {
   document.getElementById('auto-status').style.background = 'rgba(0,255,157,0.15)';
   document.getElementById('auto-status').style.color      = 'var(--green)';
 
-  // Calculate next raffle time
-  let proximoSorteio = calcProximoSorteio(inicio, intervalo);
+  let proximoSorteio = proximoInicial;
   atualizarProximo(proximoSorteio);
 
   autoCheckInterval = setInterval(() => {
@@ -1376,7 +1400,7 @@ function iniciarAutoSorteio() {
     if (agora >= proximoSorteio) {
       proximoSorteio = calcProximoSorteio(agora, intervalo);
       atualizarProximo(proximoSorteio);
-      // Switch to raffle tab and start
+      apiCall('setAutoConfig', { inicio, fim, intervalo, proximo: proximoSorteio }).catch(()=>{});
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
       document.querySelector('[data-tab="raffle"]').classList.add('active');
@@ -1385,7 +1409,7 @@ function iniciarAutoSorteio() {
     } else {
       atualizarProximo(proximoSorteio);
     }
-  }, 10000); // check every 10s
+  }, 10000);
 }
 
 function pararAutoSorteio() {
@@ -1405,6 +1429,8 @@ function pararAutoSorteio() {
     bc.postMessage({ proximoSorteio: null });
     bc.close();
   } catch(e) {}
+  // Clear server config
+  apiCall('clearAutoConfig').catch(()=>{});
 }
 
 function horaAtual() {
