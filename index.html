@@ -655,12 +655,13 @@ function apiCall(action, params = {}) {
   }
   return new Promise((resolve, reject) => {
     const cbName = 'cb_' + Date.now();
+    const ms = (action === 'raffle') ? 25000 : 12000;
     const timeout = setTimeout(() => {
       delete window[cbName];
       const tag = document.getElementById(cbName);
       if (tag) tag.remove();
       reject(new Error('Timeout'));
-    }, 10000);
+    }, ms);
 
     window[cbName] = (data) => {
       clearTimeout(timeout);
@@ -937,7 +938,7 @@ function startRaffle() {
             <div class="winner-num">${v.numero}</div>
             <div class="winner-name">${v.nome}</div>
             ${v.indicativo ? '<div class="winner-ind">' + v.indicativo + '</div>' : ''}
-            <div class="winner-meta">${r.totalPresentes} presentes - ${r.hora}</div>
+            <div class="winner-meta">${r.totalPresentes} presentes - ${formatHora(r.hora)}</div>
           </div>`;
         if (navigator.vibrate) navigator.vibrate([100,50,100,50,300,80,300]);
         raffleHist.unshift({...v, hora: r.hora});
@@ -983,7 +984,7 @@ function renderHistory() {
         <div class="hist-num">${h.numero}</div>
         <div class="hist-name">${h.nome}${h.indicativo ? ' - ' + h.indicativo : ''}</div>
       </div>
-      <div class="hist-time">${h.hora}</div>
+      <div class="hist-time">${formatHora(h.hora)}</div>
     </div>`).join('');
 }
 
@@ -1135,6 +1136,10 @@ function formatHora(h) {
   try {
     const d = new Date(s);
     if (!isNaN(d.getTime())) {
+      // 1899 dates from Google Sheets are UTC — use getUTC to avoid timezone shift
+      if (s.indexOf('1899') !== -1) {
+        return String(d.getUTCHours()).padStart(2,'0') + ':' + String(d.getUTCMinutes()).padStart(2,'0');
+      }
       return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
     }
   } catch(e) {}
