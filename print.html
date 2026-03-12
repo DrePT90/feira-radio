@@ -232,13 +232,9 @@
   const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=6&data=' + encodeURIComponent(numero);
   document.getElementById('qr-img').src = qrUrl;
 
-  // Logo (via URL param ou fallback texto)
-  if (logoUrl) {
-    document.getElementById('logo-img').src = logoUrl;
-  } else {
-    // Fallback: esconde a img e mostra texto
-    document.getElementById('logo-img').style.display = 'none';
-  }
+  // Logo — usa logo.png do mesmo repositório GitHub Pages
+  const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+  document.getElementById('logo-img').src = logoUrl || (baseUrl + 'logo.png');
 
   // Título da página
   document.title = 'Cartao ' + numero + ' — ' + nome;
