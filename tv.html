@@ -251,6 +251,18 @@
   <span id="tv-countdown" style="color:#8ba3c4;font-weight:700;letter-spacing:2px;font-size:13px;">Não há próximo sorteio</span>
 </div>
 
+<!-- CLEAR HISTORY BTN -->
+<button onclick="limparHistoricoTV()"
+  style="position:fixed;bottom:20px;left:20px;z-index:50;
+         background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);
+         color:rgba(255,255,255,0.25);border-radius:8px;padding:10px 16px;
+         font-size:11px;letter-spacing:2px;cursor:pointer;font-family:'Courier New',monospace;
+         transition:all 0.2s;"
+  onmouseover="this.style.background='rgba(220,38,38,0.2)';this.style.color='rgba(255,100,100,0.8)';this.style.borderColor='rgba(220,38,38,0.4)'"
+  onmouseout="this.style.background='rgba(255,255,255,0.06)';this.style.color='rgba(255,255,255,0.25)';this.style.borderColor='rgba(255,255,255,0.1)'">
+  LIMPAR HISTORICO
+</button>
+
 <!-- COUNTDOWN DISPLAY -->
 <div class="countdown-big" id="countdown-big">
   <div class="countdown-label">Próximo sorteio em</div>
@@ -259,7 +271,7 @@
 
 <!-- WINNERS HISTORY -->
 <div class="tv-history" id="tv-history" style="display:none;">
-  <div class="tv-history-title" onclick="tvHistoryTap()" style="cursor:pointer;">&#127881; Vencedores</div>
+  <div class="tv-history-title">&#127881; Vencedores</div>
   <div id="tv-history-list"></div>
 </div>
 
@@ -502,20 +514,10 @@ try {
 const urlParams = new URLSearchParams(window.location.search);
 if (urlParams.get('proximo')) setProximoSorteio(urlParams.get('proximo'));
 
-let tvTapCount = 0, tvTapTimer = null;
-function tvHistoryTap() {
-  tvTapCount++;
-  clearTimeout(tvTapTimer);
-  if (tvTapCount >= 3) {
-    tvTapCount = 0;
-    if (confirm('Limpar historico de vencedores?')) {
-      tvVencedores = [];
-      try { localStorage.removeItem('aarn_tv_vencedores'); } catch(e) {}
-      renderTvHistory();
-    }
-  } else {
-    tvTapTimer = setTimeout(() => { tvTapCount = 0; }, 800);
-  }
+function limparHistoricoTV() {
+  tvVencedores = [];
+  try { localStorage.removeItem('aarn_tv_vencedores'); } catch(e) {}
+  renderTvHistory();
 }
 
 function renderTvHistory() {
