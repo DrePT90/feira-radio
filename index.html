@@ -276,18 +276,7 @@
 // ═══════════════════════════════════════════
 let API_URL = localStorage.getItem('aarn_api_url') || 'https://script.google.com/macros/s/AKfycbyKdkiR2flJpHgr33maoiO6XeioEj6bnxudrqaoW0ufFJh5X1s5dqilCcwKVsOJkMEueQ/exec';
 
-function configAPI() {
-  const url = prompt('Cola aqui o URL do teu Google Apps Script:\n(termina em /exec)', API_URL);
-  if (url && url.includes('script.google.com')) {
-    API_URL = url.trim();
-    localStorage.setItem('aarn_api_url', API_URL);
-    document.getElementById('api-url-display').textContent = API_URL;
-    refreshStats();
-    alert('URL guardado!');
-  } else if (url !== null) {
-    alert('URL invalido. Deve ser um URL do Google Apps Script.');
-  }
-}
+
 
 function apiCall(action, params = {}) {
   if (!API_URL) {
@@ -329,7 +318,6 @@ function apiCall(action, params = {}) {
 // ═══════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════
-document.getElementById('api-url-display').textContent = API_URL || 'Nao configurada';
 
 function updateClock() {
   document.getElementById('clock').textContent =
