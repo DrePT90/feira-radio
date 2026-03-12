@@ -57,8 +57,8 @@
     }
     .tab {
       flex:1; padding:18px 0; text-align:center; cursor:pointer;
-      font-size:13px; letter-spacing:1.5px; text-transform:uppercase;
-      color:var(--muted); border-bottom:2px solid transparent; transition:all 0.2s;
+      font-size:13px; letter-spacing:1.5px; text-transform:uppercase; font-weight:700;
+      color:#ffffff; border-bottom:2px solid transparent; transition:all 0.2s;
     }
     .tab.active { color:var(--green); border-bottom-color:var(--green); }
 
@@ -218,7 +218,7 @@
     }
 
     .boot-subtitle {
-      color:#ffffff; font-size:16px; letter-spacing:4px;
+      color:#ffffff; font-size:16px; letter-spacing:4px; font-weight:700;
       text-transform:uppercase; margin-bottom:48px;
       font-family:'Courier New',monospace;
       opacity:0; animation: fadeIn 0.5s 1s forwards;
@@ -231,7 +231,7 @@
       opacity:0; animation: fadeIn 0.3s 0.8s forwards;
     }
     .boot-status {
-      color:var(--muted); font-size:10px; letter-spacing:2px;
+      color:#ffffff; font-size:11px; letter-spacing:2px; font-weight:700;
       font-family:'Courier New',monospace; margin-bottom:36px;
       min-height:16px; text-align:center;
       opacity:0; animation: fadeIn 0.3s 0.9s forwards;
@@ -250,7 +250,7 @@
     #pin-screen.show { display:flex; }
 
     .pin-title {
-      color:var(--text); font-size:13px; letter-spacing:3px;
+      color:#ffffff; font-size:13px; letter-spacing:3px; font-weight:700;
       text-transform:uppercase; margin-bottom:24px;
       font-family:'Courier New',monospace;
     }
@@ -301,6 +301,11 @@
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
     }
     body.light .scan-btn { color: #fff; }
+    body.light .tab { color: #1a1a2e; }
+    body.light .tab.active { color: var(--green); }
+    body.light .pin-title { color: #1a1a2e; }
+    body.light .boot-subtitle { color: #1a1a2e; }
+    body.light .boot-status { color: #1a1a2e; }
     body.light .raffle-btn {
       background: linear-gradient(135deg,#fffbeb,#fef3c7);
       color: var(--yellow);
