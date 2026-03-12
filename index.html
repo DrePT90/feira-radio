@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Feira da Radio AARN 2026</title>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     :root {
       --bg:      #060b18;
@@ -285,6 +286,27 @@
       opacity:0; transition:opacity 0.2s;
     }
     .pin-error.show { opacity:1; }
+
+    /* THEMES */
+    body.light {
+      --bg:      #f0f2f5;
+      --surface: #ffffff;
+      --border:  #e0e4ea;
+      --green:   #16a34a;
+      --blue:    #2563eb;
+      --yellow:  #d97706;
+      --red:     #dc2626;
+      --text:    #1a1a2e;
+      --muted:   #6b7280;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    }
+    body.light .scan-btn { color: #fff; }
+    body.light .raffle-btn {
+      background: linear-gradient(135deg,#fffbeb,#fef3c7);
+      color: var(--yellow);
+    }
+    body.light .pin-key { box-shadow: 0 2px 4px rgba(0,0,0,0.08); }
+    body.light .boot-screen-inner { background: #f0f2f5; }
   </style>
 </head>
 <body>
@@ -359,6 +381,8 @@
   <div class="tab active" data-tab="scanner">Scanner</div>
   <div class="tab"        data-tab="raffle" >Sorteio</div>
   <div class="tab"        data-tab="lista"  >Registados</div>
+  <div class="tab"        data-tab="stats"  >&#128200;</div>
+  <div class="tab"        data-tab="config" >&#9881;</div>
 </div>
 
 <!-- SCANNER TAB -->
@@ -412,6 +436,93 @@
     <div id="lista-list"><div class="empty">A carregar...</div></div>
   </div>
 </div>
+
+<!-- STATS TAB -->
+<div class="content" id="tab-stats">
+  <div style="padding:16px;">
+    <div class="section-title" style="margin-bottom:16px;">- Entradas por hora -</div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
+      <canvas id="chart-entradas" height="200"></canvas>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:16px;">
+      <div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;">
+        <div id="stat-pico-hora" style="font-size:22px;font-weight:900;color:var(--blue);">-</div>
+        <div style="font-size:10px;color:var(--muted);letter-spacing:2px;margin-top:4px;">HORA PICO</div>
+      </div>
+      <div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;">
+        <div id="stat-media-hora" style="font-size:22px;font-weight:900;color:var(--green);">-</div>
+        <div style="font-size:10px;color:var(--muted);letter-spacing:2px;margin-top:4px;">MEDIA/HORA</div>
+      </div>
+      <div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;">
+        <div id="stat-ultima-hora" style="font-size:22px;font-weight:900;color:var(--yellow);">-</div>
+        <div style="font-size:10px;color:var(--muted);letter-spacing:2px;margin-top:4px;">ULTIMA HORA</div>
+      </div>
+    </div>
+    <button class="refresh-btn" onclick="loadStats()">ATUALIZAR</button>
+  </div>
+</div>
+
+
+<!-- CONFIG TAB -->
+<div class="content" id="tab-config">
+  <div style="padding:20px 16px;">
+
+    <div class="section-title" style="margin-bottom:16px;">- Titulo da App -</div>
+    <input id="cfg-title" type="text" value="Event Manager APP"
+      style="width:100%;padding:14px;background:var(--surface);border:1px solid var(--border);
+             border-radius:8px;color:var(--text);font-family:inherit;font-size:15px;
+             outline:none;margin-bottom:10px;" />
+    <button onclick="aplicarTitulo()"
+      style="width:100%;padding:14px;background:var(--blue);color:#fff;border:none;
+             border-radius:8px;cursor:pointer;font-size:14px;font-weight:700;
+             letter-spacing:1px;margin-bottom:28px;">
+      APLICAR TITULO
+    </button>
+
+    <div class="section-title" style="margin-bottom:16px;">- Tema -</div>
+    <div style="display:flex;gap:12px;margin-bottom:28px;">
+      <div id="tema-dark" onclick="aplicarTema('dark')"
+        style="flex:1;border-radius:12px;overflow:hidden;cursor:pointer;border:3px solid var(--blue);">
+        <div style="background:#060b18;padding:16px;text-align:center;">
+          <div style="color:#00ff9d;font-size:13px;font-weight:700;letter-spacing:2px;">DARK</div>
+          <div style="color:#4a5a7a;font-size:10px;margin-top:4px;">Atual</div>
+          <div style="display:flex;gap:4px;justify-content:center;margin-top:10px;">
+            <div style="width:12px;height:12px;border-radius:50%;background:#00ff9d;"></div>
+            <div style="width:12px;height:12px;border-radius:50%;background:#3b9eff;"></div>
+            <div style="width:12px;height:12px;border-radius:50%;background:#ffcc00;"></div>
+          </div>
+        </div>
+      </div>
+      <div id="tema-light" onclick="aplicarTema('light')"
+        style="flex:1;border-radius:12px;overflow:hidden;cursor:pointer;border:3px solid var(--border);">
+        <div style="background:#f0f2f5;padding:16px;text-align:center;">
+          <div style="color:#2563eb;font-size:13px;font-weight:700;letter-spacing:2px;">LIGHT</div>
+          <div style="color:#6b7280;font-size:10px;margin-top:4px;">Clean</div>
+          <div style="display:flex;gap:4px;justify-content:center;margin-top:10px;">
+            <div style="width:12px;height:12px;border-radius:50%;background:#16a34a;"></div>
+            <div style="width:12px;height:12px;border-radius:50%;background:#2563eb;"></div>
+            <div style="width:12px;height:12px;border-radius:50%;background:#d97706;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title" style="margin-bottom:16px;">- PIN de acesso -</div>
+    <input id="cfg-pin" type="number" placeholder="Novo PIN (4 digitos)"
+      maxlength="4"
+      style="width:100%;padding:14px;background:var(--surface);border:1px solid var(--border);
+             border-radius:8px;color:var(--text);font-family:inherit;font-size:15px;
+             outline:none;margin-bottom:10px;" />
+    <button onclick="alterarPin()"
+      style="width:100%;padding:14px;background:var(--surface);color:var(--text);
+             border:1px solid var(--border);border-radius:8px;cursor:pointer;
+             font-size:14px;font-weight:700;letter-spacing:1px;">
+      ALTERAR PIN
+    </button>
+
+  </div>
+</div>
+
 
 <script>
 // ═══════════════════════════════════════════
@@ -479,6 +590,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
     if (tab.dataset.tab === 'raffle') loadHistory();
     if (tab.dataset.tab === 'lista') loadLista();
+    if (tab.dataset.tab === 'stats') loadStats();
   });
 });
 
@@ -817,7 +929,7 @@ function togglePresente(numero, estadoAtual) {
 // ═══════════════════════════════════════════
 //  BOOT + PIN
 // ═══════════════════════════════════════════
-const PIN_CORRETO = '2026'; // <- muda o PIN aqui
+let PIN_CORRETO = '2026'; // <- muda o PIN aqui
 let pinAtual = '';
 
 // Boot status messages
@@ -895,6 +1007,133 @@ function checkPin() {
       updateDots();
     }, 800);
   }
+}
+
+// ═══════════════════════════════════════════
+//  SETTINGS
+// ═══════════════════════════════════════════
+let temaAtual = localStorage.getItem('aarn_tema') || 'dark';
+
+function aplicarTema(tema) {
+  temaAtual = tema;
+  localStorage.setItem('aarn_tema', tema);
+  if (tema === 'light') {
+    document.body.classList.add('light');
+    document.getElementById('tema-dark').style.borderColor = 'var(--border)';
+    document.getElementById('tema-light').style.borderColor = 'var(--blue)';
+  } else {
+    document.body.classList.remove('light');
+    document.getElementById('tema-dark').style.borderColor = 'var(--blue)';
+    document.getElementById('tema-light').style.borderColor = 'var(--border)';
+  }
+}
+
+function aplicarTitulo() {
+  const val = document.getElementById('cfg-title').value.trim();
+  if (val) {
+    document.getElementById('main-title').textContent = val;
+    localStorage.setItem('aarn_title', val);
+  }
+}
+
+function alterarPin() {
+  const val = document.getElementById('cfg-pin').value.trim();
+  if (val.length === 4 && /^[0-9]{4}$/.test(val)) {
+    PIN_CORRETO = val;
+    localStorage.setItem('aarn_pin', val);
+    document.getElementById('cfg-pin').value = '';
+    alert('PIN alterado com sucesso!');
+  } else {
+    alert('O PIN deve ter exatamente 4 digitos.');
+  }
+}
+
+// Load saved settings on start
+(function() {
+  const savedTheme = localStorage.getItem('aarn_tema');
+  if (savedTheme === 'light') aplicarTema('light');
+  const savedTitle = localStorage.getItem('aarn_title');
+  if (savedTitle) {
+    document.getElementById('cfg-title').value = savedTitle;
+  }
+  const savedPin = localStorage.getItem('aarn_pin');
+  if (savedPin) PIN_CORRETO = savedPin;
+})();
+
+// ═══════════════════════════════════════════
+//  ESTATISTICAS — GRAFICO
+// ═══════════════════════════════════════════
+let chartInstance = null;
+
+function loadStats() {
+  apiCall('statsHora')
+    .then(data => renderChart(data))
+    .catch(() => {});
+}
+
+function renderChart(data) {
+  // data = [ {hora:"09", count:5}, ... ]
+  if (!data || !data.length) return;
+
+  const labels = data.map(d => d.hora + 'h');
+  const values = data.map(d => d.count);
+
+  const total  = values.reduce((a,b) => a+b, 0);
+  const max    = Math.max(...values);
+  const picoIdx = values.indexOf(max);
+  const media  = total > 0 ? (total / values.filter(v=>v>0).length).toFixed(1) : 0;
+  const ultimaHora = values[values.length - 1] || 0;
+
+  document.getElementById('stat-pico-hora').textContent  = labels[picoIdx] || '-';
+  document.getElementById('stat-media-hora').textContent = media;
+  document.getElementById('stat-ultima-hora').textContent = ultimaHora;
+
+  const isLight = document.body.classList.contains('light');
+  const gridColor   = isLight ? 'rgba(0,0,0,0.08)'  : 'rgba(255,255,255,0.06)';
+  const labelColor  = isLight ? '#6b7280'            : '#4a5a7a';
+  const barColor    = isLight ? '#2563eb'            : '#3b9eff';
+  const barColorHl  = isLight ? '#16a34a'            : '#00ff9d';
+
+  const colors = values.map((v,i) => v === max ? barColorHl : barColor);
+
+  const ctx = document.getElementById('chart-entradas').getContext('2d');
+  if (chartInstance) chartInstance.destroy();
+
+  chartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Entradas',
+        data: values,
+        backgroundColor: colors,
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ' ' + ctx.parsed.y + ' entradas'
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: gridColor },
+          ticks: { color: labelColor, font: { size: 11 } }
+        },
+        y: {
+          beginAtZero: true,
+          ticks: { color: labelColor, font: { size: 11 }, stepSize: 1 },
+          grid: { color: gridColor }
+        }
+      }
+    }
+  });
 }
 </script>
 </body>
