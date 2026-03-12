@@ -16,7 +16,7 @@
       --yellow:  #ffcc00;
       --red:     #ff4466;
       --text:    #e8edf5;
-      --muted:   #8090aa;
+      --muted:   #a0b0c8;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     body {
@@ -47,7 +47,7 @@
     .stat.s-green  .stat-value { color: var(--green); }
     .stat.s-blue   .stat-value { color: var(--blue); }
     .stat.s-yellow .stat-value { color: var(--yellow); }
-    .stat-label { font-size: 11px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-top: 5px; }
+    .stat-label { font-size: 11px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-top: 5px; font-weight: 700; }
 
     /* TABS */
     .tabs {
@@ -116,7 +116,7 @@
     /* LOG */
     .log-section { padding:0 16px 16px; }
     .section-title {
-      font-size:10px; letter-spacing:2.5px; color:var(--muted);
+      font-size:10px; letter-spacing:2.5px; color:var(--muted); font-weight:700;
       text-transform:uppercase; padding:14px 0 8px;
       border-bottom:1px solid var(--border); margin-bottom:4px;
     }
@@ -129,7 +129,7 @@
     .dot.dup { background:var(--yellow); }
     .dot.err { background:var(--red); }
     .log-nome { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .log-num,.log-time { color:var(--muted); font-size:11px; flex-shrink:0; }
+    .log-num,.log-time { color:var(--muted); font-size:11px; flex-shrink:0; font-weight:600; }
 
     /* RAFFLE */
     .raffle-section { padding:20px 16px; }
@@ -139,17 +139,17 @@
       min-height:220px; display:flex; flex-direction:column;
       align-items:center; justify-content:center;
     }
-    .raffle-idle { color:var(--muted); font-size:13px; letter-spacing:2px; line-height:2.5; }
+    .raffle-idle { color:var(--muted); font-size:13px; letter-spacing:2px; line-height:2.5; font-weight:700; }
     .spin-num { font-size:46px; font-weight:900; color:var(--yellow); letter-spacing:3px; }
     @keyframes spin-anim { 0%{opacity:1} 50%{opacity:0.3} 100%{opacity:1} }
     .spinning .spin-num { animation:spin-anim 0.12s linear infinite; }
     .winner-wrap { animation:winPop 0.5s cubic-bezier(0.34,1.56,0.64,1); }
     @keyframes winPop { 0%{transform:scale(0.4);opacity:0} 100%{transform:scale(1);opacity:1} }
-    .winner-label { font-size:10px; letter-spacing:3px; color:var(--muted); text-transform:uppercase; margin-bottom:14px; }
+    .winner-label { font-size:10px; letter-spacing:3px; color:var(--muted); text-transform:uppercase; margin-bottom:14px; font-weight:700; }
     .winner-num { font-size:52px; font-weight:900; color:var(--yellow); letter-spacing:2px; text-shadow:0 0 40px rgba(255,204,0,0.5); line-height:1; }
     .winner-name { font-size:22px; font-weight:700; margin-top:10px; }
     .winner-ind  { font-size:16px; color:var(--green); margin-top:4px; }
-    .winner-meta { font-size:11px; color:var(--muted); margin-top:14px; }
+    .winner-meta { font-size:11px; color:var(--muted); margin-top:14px; font-weight:700; }
     .raffle-btn {
       width:100%; padding:28px;
       background:linear-gradient(135deg,#1a0d00,#2e1800);
@@ -165,8 +165,8 @@
     .hist-rank { width:26px; height:26px; border-radius:50%; background:var(--yellow); color:#000; font-size:11px; font-weight:900; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
     .hist-num  { color:var(--yellow); font-weight:700; font-size:13px; }
     .hist-name { color:var(--text); font-size:13px; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .hist-time { color:var(--muted); font-size:11px; flex-shrink:0; }
-    .empty { text-align:center; color:var(--muted); font-size:13px; padding:36px 20px; letter-spacing:1px; }
+    .hist-time { color:var(--muted); font-size:11px; flex-shrink:0; font-weight:600; }
+    .empty { text-align:center; color:var(--muted); font-size:13px; padding:36px 20px; letter-spacing:1px; font-weight:600; }
 
 
     /* LISTA */
@@ -182,7 +182,7 @@
     .lista-badge.sim { background:rgba(0,255,157,0.15); color:var(--green); }
     .lista-badge.nao { background:rgba(74,90,122,0.2);  color:var(--muted); }
     .lista-nome { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .lista-num  { color:var(--muted); font-size:11px; flex-shrink:0; }
+    .lista-num  { color:var(--muted); font-size:11px; flex-shrink:0; font-weight:600; }
     .refresh-btn {
       width:100%; padding:12px; margin:12px 0;
       background:none; border:1px solid var(--border); color:var(--muted);
