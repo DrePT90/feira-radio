@@ -592,10 +592,22 @@ function renderLista(lista) {
   }
   el.innerHTML = lista.map(p => `
     <div class="lista-item">
-      <span class="lista-badge ${p.presente === 'SIM' ? 'sim' : 'nao'}">${p.presente === 'SIM' ? 'PRESENTE' : 'AUSENTE'}</span>
+      <span class="lista-badge ${p.presente === 'SIM' ? 'sim' : 'nao'}"
+            onclick="togglePresente('${p.numero}', '${p.presente}')"
+            style="cursor:pointer;user-select:none;"
+            title="Clica para alternar">
+        ${p.presente === 'SIM' ? 'PRESENTE' : 'AUSENTE'}
+      </span>
       <span class="lista-nome">${p.nome}${p.indicativo ? ' <span style="color:var(--muted);font-size:11px;">- ' + p.indicativo + '</span>' : ''}</span>
       <span class="lista-num">${p.numero}</span>
     </div>`).join('');
+}
+
+function togglePresente(numero, estadoAtual) {
+  const novoEstado = estadoAtual === 'SIM' ? 'NAO' : 'SIM';
+  apiCall('togglePresente', { numero, estado: novoEstado })
+    .then(() => loadLista())
+    .catch(() => alert('Erro ao atualizar. Tenta novamente.'));
 }
 </script>
 </body>
