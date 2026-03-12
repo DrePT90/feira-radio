@@ -259,7 +259,7 @@
 
 <!-- WINNERS HISTORY -->
 <div class="tv-history" id="tv-history" style="display:none;">
-  <div class="tv-history-title">&#127881; Vencedores</div>
+  <div class="tv-history-title" onclick="tvHistoryTap()" style="cursor:pointer;">&#127881; Vencedores</div>
   <div id="tv-history-list"></div>
 </div>
 
@@ -501,6 +501,22 @@ try {
 // Also check URL param ?proximo=HH:MM for manual testing
 const urlParams = new URLSearchParams(window.location.search);
 if (urlParams.get('proximo')) setProximoSorteio(urlParams.get('proximo'));
+
+let tvTapCount = 0, tvTapTimer = null;
+function tvHistoryTap() {
+  tvTapCount++;
+  clearTimeout(tvTapTimer);
+  if (tvTapCount >= 3) {
+    tvTapCount = 0;
+    if (confirm('Limpar historico de vencedores?')) {
+      tvVencedores = [];
+      try { localStorage.removeItem('aarn_tv_vencedores'); } catch(e) {}
+      renderTvHistory();
+    }
+  } else {
+    tvTapTimer = setTimeout(() => { tvTapCount = 0; }, 800);
+  }
+}
 
 function renderTvHistory() {
   const wrap = document.getElementById('tv-history');
