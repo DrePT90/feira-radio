@@ -440,18 +440,89 @@ function scanFrame() {
 
 function processQR(numero) {
   showResult('load', null);
-  apiCall('validate', { numero })
+  apiCall('check', { numero })
     .then(r => {
-      const type = r.success ? (r.duplicado ? 'dup' : 'ok') : 'err';
-      showResult(type, r);
-      addLog(type, r);
-      refreshStats();
-      setTimeout(() => { hideResult(); processing = false; }, 3000);
+      if (!r.found) {
+        showResult('err', { message: 'Numero nao encontrado.' });
+        setTimeout(() => { hideResult(); processing = false; }, 3000);
+        return;
+      }
+      if (r.invalido) {
+        showResult('err', { message: 'QR Code falso ou invalido!' });
+        setTimeout(() => { hideResult(); processing = false; }, 3000);
+        return;
+      }
+      // Mostra estado atual com opcao de acao
+      showResultInteractive(r);
     })
     .catch(() => {
       showResult('err', { message: 'Erro de ligacao. Tenta novamente.' });
       setTimeout(() => { processing = false; }, 2500);
     });
+}
+
+function showResultInteractive(r) {
+  const el = document.getElementById('result-card');
+  el.style.display = 'block';
+
+  if (r.presente === 'SIM') {
+    // Ja presente — oferece saida
+    el.className = 'result-card show dup';
+    el.innerHTML = `
+      <div class="rc-icon">[!]</div>
+      <div class="rc-name">${r.nome}</div>
+      <div class="rc-num">${r.numero}${r.indicativo ? ' - ' + r.indicativo : ''}</div>
+      <div class="rc-msg">Ja entrou as ${r.horaEntrada}</div>
+      <button onclick="acaoPresente('${r.numero}', 'NAO')"
+        style="margin-top:14px;width:100%;padding:14px;background:rgba(255,68,102,0.15);
+               border:1px solid var(--red);color:var(--red);border-radius:8px;
+               cursor:pointer;font-family:'Courier New',monospace;font-size:13px;
+               font-weight:700;letter-spacing:2px;">
+        DAR SAIDA
+      </button>
+      <button onclick="hideResult();processing=false;"
+        style="margin-top:8px;width:100%;padding:12px;background:none;
+               border:1px solid var(--border);color:var(--muted);border-radius:8px;
+               cursor:pointer;font-family:'Courier New',monospace;font-size:12px;">
+        FECHAR
+      </button>`;
+    if (navigator.vibrate) navigator.vibrate([200,80,200]);
+  } else {
+    // Ausente — valida entrada
+    el.className = 'result-card show ok';
+    el.innerHTML = `
+      <div class="rc-icon">[OK]</div>
+      <div class="rc-name">${r.nome}</div>
+      <div class="rc-num">${r.numero}${r.indicativo ? ' - ' + r.indicativo : ''}</div>
+      <div class="rc-msg">Ausente — a validar entrada...</div>`;
+    if (navigator.vibrate) navigator.vibrate([100,50,100]);
+    // Valida automaticamente
+    apiCall('validate', { numero: r.numero })
+      .then(res => {
+        el.innerHTML = `
+          <div class="rc-icon">[OK]</div>
+          <div class="rc-name">${res.nome}</div>
+          <div class="rc-num">${res.numero}${res.indicativo ? ' - ' + res.indicativo : ''}</div>
+          <div class="rc-msg">Entrada validada as ${res.horaEntrada}</div>`;
+        addLog('ok', res);
+        refreshStats();
+        setTimeout(() => { hideResult(); processing = false; }, 3000);
+      })
+      .catch(() => { hideResult(); processing = false; });
+  }
+}
+
+function acaoPresente(numero, estado) {
+  apiCall('togglePresente', { numero, estado })
+    .then(() => {
+      hideResult();
+      processing = false;
+      refreshStats();
+      const msg = estado === 'NAO' ? 'Saida registada.' : 'Entrada registada.';
+      showResult('ok', { nome: msg, numero: numero, indicativo: '', horaEntrada: '' });
+      setTimeout(() => { hideResult(); }, 2500);
+    })
+    .catch(() => { hideResult(); processing = false; });
 }
 
 function showResult(type, data) {
