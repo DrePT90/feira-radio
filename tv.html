@@ -428,6 +428,17 @@ function lancarConfetti() {
   }
 }
 
+// ── SYNC CONFIG FROM SERVER ──────────────────────
+function sincronizarConfig() {
+  apiCall('getAutoConfig').then(cfg => {
+    if (cfg && cfg.ativo && cfg.proximo) {
+      setProximoSorteio(cfg.proximo);
+    } else if (!cfg || !cfg.ativo) {
+      setProximoSorteio(null);
+    }
+  }).catch(()=>{});
+}
+
 // ── COUNTDOWN ──────────────────────────────────
 let proximoSorteioTV = null; // set externally via URL param or postMessage
 
@@ -508,6 +519,7 @@ function renderTvHistory() {
 // Init — load history first, mark all existing as seen, THEN start polling
 renderTvHistory();
 refreshStats();
+sincronizarConfig();
 updateCountdown();
 
 apiCall('history').then(hist => {
@@ -530,6 +542,7 @@ apiCall('history').then(hist => {
 
 setInterval(refreshStats, 15000);
 setInterval(updateCountdown, 1000);
+setInterval(sincronizarConfig, 10000); // sync config every 10s
 </script>
 </body>
 </html>
