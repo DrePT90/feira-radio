@@ -363,10 +363,12 @@ function checkNewWinner() {
 
 function animarSorteio(vencedor) {
   animating = true;
+  // Safety: always reset animating after 45s no matter what
+  setTimeout(() => { animating = false; }, 45000);
   const main = document.getElementById('tv-main');
   document.getElementById('countdown-big').classList.remove('show');
 
-  // Try to resume audio — may have been suspended
+  // Try to resume audio
   if (tvAudioCtx && tvAudioCtx.state === 'suspended') tvAudioCtx.resume();
 
   let interval = 300;
@@ -472,20 +474,26 @@ function lancarConfetti() {
 
 // ── SYNC CONFIG FROM SERVER ──────────────────────
 function sincronizarConfig() {
-  if (animating) return; // never update during animation
   sincronizando = true;
   apiCall('getAutoConfig').then(cfg => {
     sincronizando = false;
     if (!cfg || !cfg.ativo) {
-      setProximoSorteio(null);
+      if (!animating) setProximoSorteio(null);
       return;
     }
     if (cfg.proximo) {
+      // Accept any time from server when config is active
+      // (even if slightly in past — server may not have updated yet)
       const parts  = cfg.proximo.split(':');
       const target = new Date();
       target.setHours(parseInt(parts[0]), parseInt(parts[1]), 0, 0);
-      if (target > new Date()) {
+      const diffMs = target - new Date();
+      if (diffMs > -30000) {
+        // Within 30s past — still valid, show countdown
         setProximoSorteio(cfg.proximo);
+      } else if (!animating) {
+        // More than 30s past — clear countdown only if not animating
+        setProximoSorteio(null);
       }
     }
   }).catch(() => { sincronizando = false; });
@@ -522,7 +530,7 @@ function updateCountdown() {
     footer.textContent = 'Sorteio iminente!';
     footer.style.color = '#f59e0b';
     el.textContent = '00:00';
-    if (!animating) bigEl.classList.add('show');
+    if (!animating) { bigEl.classList.add('show'); }
     // Force winner check 3 seconds after countdown hits 0
     if (!animating) setTimeout(checkNewWinner, 3000);
     return;
@@ -541,7 +549,7 @@ function updateCountdown() {
     tvBeepCountdown(secs);
   }
 
-  if (!animating) bigEl.classList.add('show');
+  if (!animating) { bigEl.classList.add('show'); }
 }
 
 // Listen for countdown updates from main app via BroadcastChannel
