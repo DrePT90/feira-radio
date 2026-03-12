@@ -291,13 +291,15 @@ try { tvVencedores = JSON.parse(localStorage.getItem('aarn_tv_vencedores') || '[
 
 function formatHora(h) {
   if (!h) return '';
-  const s = String(h);
+  const s = String(h).trim();
   // Already HH:MM
-  if (/^\d{2}:\d{2}$/.test(s)) return s;
-  // Date object string
+  if (/^\d{1,2}:\d{2}$/.test(s)) return s.padStart(5,'0');
+  // ISO or any parseable date
   try {
     const d = new Date(s);
-    if (!isNaN(d)) return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+    if (!isNaN(d.getTime())) {
+      return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+    }
   } catch(e) {}
   return s;
 }
