@@ -16,7 +16,7 @@
       --yellow:  #ffcc00;
       --red:     #ff4466;
       --text:    #e8edf5;
-      --muted:   #4a5a7a;
+      --muted:   #8090aa;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     body {
@@ -803,7 +803,7 @@ function showResultInteractive(r) {
       <div class="rc-icon">[!]</div>
       <div class="rc-name">${r.nome}</div>
       <div class="rc-num">${r.numero}${r.indicativo ? ' - ' + r.indicativo : ''}</div>
-      <div class="rc-msg">Ja entrou as ${r.horaEntrada}</div>
+      <div class="rc-msg">Ja entrou as ${formatHora(r.horaEntrada)}</div>
       <button onclick="acaoPresente('${r.numero}', 'NAO')"
         style="margin-top:14px;width:100%;padding:14px;background:rgba(255,68,102,0.15);
                border:1px solid var(--red);color:var(--red);border-radius:8px;
@@ -834,7 +834,7 @@ function showResultInteractive(r) {
           <div class="rc-icon">[OK]</div>
           <div class="rc-name">${res.nome}</div>
           <div class="rc-num">${res.numero}${res.indicativo ? ' - ' + res.indicativo : ''}</div>
-          <div class="rc-msg">Entrada validada as ${res.horaEntrada}</div>`;
+          <div class="rc-msg">Entrada validada as ${formatHora(res.horaEntrada)}</div>`;
         addLog('ok', res);
         refreshStats();
         setTimeout(() => { hideResult(); processing = false; }, 3000);
@@ -870,8 +870,8 @@ function showResult(type, data) {
     <div class="rc-name">${data.nome || data.message || 'QR invalido'}</div>
     <div class="rc-num">${data.numero || ''}${data.indicativo ? ' - ' + data.indicativo : ''}</div>
     <div class="rc-msg">${
-      type==='ok'  ? 'Entrada validada as ' + data.horaEntrada :
-      type==='dup' ? 'Ja entrou as ' + data.horaEntrada :
+      type==='ok'  ? 'Entrada validada as ' + formatHora(data.horaEntrada) :
+      type==='dup' ? 'Ja entrou as ' + formatHora(data.horaEntrada) :
       data.message || ''
     }</div>`;
   const vibs = { ok:[100,50,100], dup:[200,80,200,80,200], err:[400] };
@@ -1120,6 +1120,19 @@ function checkPin() {
 }
 
 
+
+function formatHora(h) {
+  if (!h) return '';
+  const s = String(h).trim();
+  if (/^\d{1,2}:\d{2}$/.test(s)) return s.padStart(5, '0');
+  try {
+    const d = new Date(s);
+    if (!isNaN(d.getTime())) {
+      return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+    }
+  } catch(e) {}
+  return s;
+}
 // ═══════════════════════════════════════════
 //  MODALS
 // ═══════════════════════════════════════════
