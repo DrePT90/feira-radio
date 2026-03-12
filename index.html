@@ -1017,6 +1017,12 @@ function startRaffle() {
         raffleHist.unshift({...v, hora: r.hora});
         renderHistory();
         btn.disabled = false;
+        // Envia vencedor para tv.html
+        try {
+          const bc = new BroadcastChannel('aarn_sorteio');
+          bc.postMessage({ novoVencedor: { ...v, hora: r.hora } });
+          bc.close();
+        } catch(e) {}
       })
       .catch(() => {
         clearInterval(anim);
