@@ -719,6 +719,12 @@ setInterval(() => { if (API_URL) refreshStats(); }, 30000);
 // ═══════════════════════════════════════════
 let scanning = false, videoStream = null, scanInterval = null, processing = false;
 
+function scanLoop() {
+  if (!scanning) return;
+  scanFrame();
+  requestAnimationFrame(scanLoop);
+}
+
 async function toggleScanner() {
   scanning ? stopScanner() : await startScanner();
 }
@@ -735,7 +741,7 @@ async function startScanner() {
     document.getElementById('scan-btn').textContent = 'PARAR SCANNER';
     document.getElementById('scan-btn').classList.add('stop');
     document.getElementById('scan-overlay').classList.add('active');
-    scanInterval = setInterval(scanFrame, 200);
+    scanLoop();
   } catch(err) {
     alert('Nao foi possivel aceder a camara.\n' + err.message +
           '\n\nCertifica-te que:\n1. Estás a usar Safari no iOS\n2. Permitiste acesso a camara nas Definicoes');
@@ -744,7 +750,7 @@ async function startScanner() {
 
 function stopScanner() {
   if (videoStream) { videoStream.getTracks().forEach(t => t.stop()); videoStream = null; }
-  clearInterval(scanInterval);
+  scanInterval = null;
   scanning = false; processing = false;
   document.getElementById('video').srcObject = null;
   document.getElementById('scan-btn').textContent = 'INICIAR SCANNER';
@@ -795,6 +801,8 @@ function processQR(numero) {
 function showResultInteractive(r) {
   const el = document.getElementById('result-card');
   el.style.display = 'block';
+  // Safety valve — reset processing after 6s even if no button pressed
+  setTimeout(() => { processing = false; }, 6000);
 
   if (r.presente === 'SIM') {
     // Ja presente — oferece saida
@@ -818,6 +826,8 @@ function showResultInteractive(r) {
         FECHAR
       </button>`;
     if (navigator.vibrate) navigator.vibrate([200,80,200]);
+    // Auto-close after 5s if no action taken
+    setTimeout(() => { if (processing) { hideResult(); processing = false; } }, 5000);
   } else {
     // Ausente — valida entrada
     el.className = 'result-card show ok';
@@ -837,7 +847,7 @@ function showResultInteractive(r) {
           <div class="rc-msg">Entrada validada as ${formatHora(res.horaEntrada)}</div>`;
         addLog('ok', res);
         refreshStats();
-        setTimeout(() => { hideResult(); processing = false; }, 3000);
+        setTimeout(() => { hideResult(); processing = false; }, 2000);
       })
       .catch(() => { hideResult(); processing = false; });
   }
@@ -879,6 +889,7 @@ function showResult(type, data) {
 }
 
 function hideResult() {
+  processing = false;
   const el = document.getElementById('result-card');
   el.className = 'result-card'; el.style.display = 'none';
 }
