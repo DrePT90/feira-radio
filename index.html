@@ -307,6 +307,46 @@
     }
     body.light .pin-key { box-shadow: 0 2px 4px rgba(0,0,0,0.08); }
     body.light .boot-screen-inner { background: #f0f2f5; }
+
+    /* FLOATING BOTTOM BAR */
+    .bottom-bar {
+      position: fixed; bottom: 16px; right: 16px;
+      display: flex; flex-direction: column; gap: 10px;
+      z-index: 200;
+    }
+    .fab {
+      width: 52px; height: 52px; border-radius: 50%;
+      background: var(--surface); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 20px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+      transition: all 0.2s;
+    }
+    .fab:active { transform: scale(0.92); }
+
+    /* MODAL OVERLAY */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+      z-index: 300; display: none; align-items: flex-end;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-sheet {
+      background: var(--surface); border-top: 1px solid var(--border);
+      border-radius: 20px 20px 0 0; width: 100%; max-height: 85vh;
+      overflow-y: auto; padding: 12px 0 32px;
+      animation: slideUp 0.25s ease;
+    }
+    @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+    .modal-handle {
+      width: 40px; height: 4px; border-radius: 2px;
+      background: var(--border); margin: 0 auto 16px;
+    }
+    .modal-title {
+      font-size: 13px; font-weight: 700; letter-spacing: 2px;
+      text-transform: uppercase; padding: 0 20px 16px;
+      border-bottom: 1px solid var(--border); margin-bottom: 4px;
+      color: var(--muted);
+    }
   </style>
 </head>
 <body>
@@ -381,8 +421,7 @@
   <div class="tab active" data-tab="scanner">Scanner</div>
   <div class="tab"        data-tab="raffle" >Sorteio</div>
   <div class="tab"        data-tab="lista"  >Registados</div>
-  <div class="tab"        data-tab="stats"  >&#128200;</div>
-  <div class="tab"        data-tab="config" >&#9881;</div>
+
 </div>
 
 <!-- SCANNER TAB -->
@@ -488,8 +527,8 @@
   </div>
 </div>
 
-<!-- STATS TAB -->
-<div class="content" id="tab-stats">
+<!-- STATS TAB (moved to modal) -->
+<div class="content" id="tab-stats" style="display:none!important;">
   <div style="padding:16px;">
     <div class="section-title" style="margin-bottom:16px;">- Entradas por hora -</div>
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
@@ -514,8 +553,8 @@
 </div>
 
 
-<!-- CONFIG TAB -->
-<div class="content" id="tab-config">
+<!-- CONFIG TAB (moved to modal) -->
+<div class="content" id="tab-config" style="display:none!important;">
   <div style="padding:20px 16px;">
 
     <div class="section-title" style="margin-bottom:16px;">- Titulo da App -</div>
@@ -571,6 +610,103 @@
       ALTERAR PIN
     </button>
 
+  </div>
+</div>
+
+
+<!-- FLOATING BOTTOM BAR -->
+<div class="bottom-bar">
+  <div class="fab" onclick="abrirModal('modal-stats')" title="Estatisticas">&#9998;</div>
+  <div class="fab" onclick="abrirModal('modal-config')" title="Definicoes">&#9881;</div>
+</div>
+
+<!-- MODAL STATS -->
+<div class="modal-overlay" id="modal-stats" onclick="fecharModal('modal-stats')">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Estatisticas — Entradas por hora</div>
+    <div style="padding:16px;">
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
+        <canvas id="chart-entradas" height="200"></canvas>
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:16px;">
+        <div style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;">
+          <div id="stat-pico-hora" style="font-size:22px;font-weight:900;color:var(--blue);">-</div>
+          <div style="font-size:10px;color:var(--muted);letter-spacing:2px;margin-top:4px;">HORA PICO</div>
+        </div>
+        <div style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;">
+          <div id="stat-media-hora" style="font-size:22px;font-weight:900;color:var(--green);">-</div>
+          <div style="font-size:10px;color:var(--muted);letter-spacing:2px;margin-top:4px;">MEDIA/HORA</div>
+        </div>
+        <div style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;">
+          <div id="stat-ultima-hora" style="font-size:22px;font-weight:900;color:var(--yellow);">-</div>
+          <div style="font-size:10px;color:var(--muted);letter-spacing:2px;margin-top:4px;">ULTIMA HORA</div>
+        </div>
+      </div>
+      <button class="refresh-btn" onclick="loadStats()">ATUALIZAR</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFIG -->
+<div class="modal-overlay" id="modal-config" onclick="fecharModal('modal-config')">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Definicoes</div>
+    <div style="padding:16px;">
+
+      <div class="section-title" style="margin-bottom:16px;">- Titulo da App -</div>
+      <input id="cfg-title" type="text" value="Event Manager APP"
+        style="width:100%;padding:14px;background:var(--bg);border:1px solid var(--border);
+               border-radius:8px;color:var(--text);font-family:inherit;font-size:15px;
+               outline:none;margin-bottom:10px;" />
+      <button onclick="aplicarTitulo()"
+        style="width:100%;padding:14px;background:var(--blue);color:#fff;border:none;
+               border-radius:8px;cursor:pointer;font-size:14px;font-weight:700;
+               letter-spacing:1px;margin-bottom:28px;">
+        APLICAR TITULO
+      </button>
+
+      <div class="section-title" style="margin-bottom:16px;">- Tema -</div>
+      <div style="display:flex;gap:12px;margin-bottom:28px;">
+        <div id="tema-dark" onclick="aplicarTema('dark')"
+          style="flex:1;border-radius:12px;overflow:hidden;cursor:pointer;border:3px solid var(--blue);">
+          <div style="background:#060b18;padding:16px;text-align:center;">
+            <div style="color:#00ff9d;font-size:13px;font-weight:700;letter-spacing:2px;">DARK</div>
+            <div style="color:#4a5a7a;font-size:10px;margin-top:4px;">Atual</div>
+            <div style="display:flex;gap:4px;justify-content:center;margin-top:10px;">
+              <div style="width:12px;height:12px;border-radius:50%;background:#00ff9d;"></div>
+              <div style="width:12px;height:12px;border-radius:50%;background:#3b9eff;"></div>
+              <div style="width:12px;height:12px;border-radius:50%;background:#ffcc00;"></div>
+            </div>
+          </div>
+        </div>
+        <div id="tema-light" onclick="aplicarTema('light')"
+          style="flex:1;border-radius:12px;overflow:hidden;cursor:pointer;border:3px solid var(--border);">
+          <div style="background:#f0f2f5;padding:16px;text-align:center;">
+            <div style="color:#2563eb;font-size:13px;font-weight:700;letter-spacing:2px;">LIGHT</div>
+            <div style="color:#6b7280;font-size:10px;margin-top:4px;">Clean</div>
+            <div style="display:flex;gap:4px;justify-content:center;margin-top:10px;">
+              <div style="width:12px;height:12px;border-radius:50%;background:#16a34a;"></div>
+              <div style="width:12px;height:12px;border-radius:50%;background:#2563eb;"></div>
+              <div style="width:12px;height:12px;border-radius:50%;background:#d97706;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title" style="margin-bottom:16px;">- PIN de acesso -</div>
+      <input id="cfg-pin" type="number" placeholder="Novo PIN (4 digitos)" maxlength="4"
+        style="width:100%;padding:14px;background:var(--bg);border:1px solid var(--border);
+               border-radius:8px;color:var(--text);font-family:inherit;font-size:15px;
+               outline:none;margin-bottom:10px;" />
+      <button onclick="alterarPin()"
+        style="width:100%;padding:14px;background:var(--bg);color:var(--text);
+               border:1px solid var(--border);border-radius:8px;cursor:pointer;
+               font-size:14px;font-weight:700;letter-spacing:1px;">
+        ALTERAR PIN
+      </button>
+    </div>
   </div>
 </div>
 
@@ -1058,6 +1194,18 @@ function checkPin() {
       updateDots();
     }, 800);
   }
+}
+
+
+// ═══════════════════════════════════════════
+//  MODALS
+// ═══════════════════════════════════════════
+function abrirModal(id) {
+  document.getElementById(id).classList.add('show');
+  if (id === 'modal-stats') loadStats();
+}
+function fecharModal(id) {
+  document.getElementById(id).classList.remove('show');
 }
 
 // ═══════════════════════════════════════════
