@@ -325,7 +325,7 @@ function apiCall(action, params = {}) {
       const tag = document.getElementById(cbName);
       if (tag) tag.remove();
       reject(new Error('Timeout'));
-    }, 10000);
+    }, 15000);
     window[cbName] = (data) => {
       clearTimeout(timeout);
       delete window[cbName];
