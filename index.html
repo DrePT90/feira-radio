@@ -737,7 +737,8 @@ async function startScanner() {
     await zxingReader.decodeFromConstraints(constraints, 'video', (result, err) => {
       if (result && !processing) {
         processing = true;
-        if (navigator.vibrate) navigator.vibrate([50]);
+        beep('scan');
+        if (navigator.vibrate) navigator.vibrate([60]);
         processQR(result.getText());
       }
     });
@@ -761,7 +762,9 @@ function processQR(numero) {
   apiCall('check', { numero })
     .then(r => {
       if (!r.found) {
-        showResult('err', { message: 'Numero nao encontrado.' });
+        beep('err');
+      if (navigator.vibrate) navigator.vibrate([300]);
+      showResult('err', { message: 'Numero nao encontrado.' });
         setTimeout(() => { hideResult(); processing = false; }, 3000);
         return;
       }
@@ -806,6 +809,7 @@ function showResultInteractive(r) {
                cursor:pointer;font-family:'Courier New',monospace;font-size:12px;">
         FECHAR
       </button>`;
+    beep('dup');
     if (navigator.vibrate) navigator.vibrate([200,80,200]);
     // Auto-close after 5s if no action taken
     setTimeout(() => { if (processing) { hideResult(); processing = false; } }, 5000);
@@ -826,6 +830,8 @@ function showResultInteractive(r) {
           <div class="rc-name">${res.nome}</div>
           <div class="rc-num">${res.numero}${res.indicativo ? ' - ' + res.indicativo : ''}</div>
           <div class="rc-msg">Entrada validada as ${formatHora(res.horaEntrada)}</div>`;
+        beep('ok');
+        if (navigator.vibrate) navigator.vibrate([80,40,80]);
         addLog('ok', res);
         refreshStats();
         setTimeout(() => { hideResult(); processing = false; }, 2000);
@@ -1124,6 +1130,48 @@ function formatHora(h) {
     }
   } catch(e) {}
   return s;
+}
+
+function beep(type) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    if (type === 'ok') {
+      // Dois tons ascendentes — sucesso
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      osc.frequency.setValueAtTime(1320, ctx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.3);
+    } else if (type === 'dup') {
+      // Tom médio — já validado
+      osc.frequency.setValueAtTime(440, ctx.currentTime);
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.4);
+    } else if (type === 'err') {
+      // Tom descendente — erro
+      osc.frequency.setValueAtTime(300, ctx.currentTime);
+      osc.frequency.setValueAtTime(150, ctx.currentTime + 0.15);
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.35);
+    } else {
+      // Bip simples — leitura QR
+      osc.frequency.setValueAtTime(1000, ctx.currentTime);
+      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.08);
+    }
+  } catch(e) {}
 }
 // ═══════════════════════════════════════════
 //  MODALS
