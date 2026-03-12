@@ -413,6 +413,57 @@
     <button class="raffle-btn" id="raffle-btn" onclick="startRaffle()">
       SORTEAR AGORA
     </button>
+
+    <!-- SORTEIO AUTOMATICO -->
+    <div style="margin-top:20px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <span style="font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;">Sorteio Automatico</span>
+        <div id="auto-status" style="font-size:10px;padding:4px 10px;border-radius:20px;
+             background:rgba(74,90,122,0.2);color:var(--muted);letter-spacing:1px;">INATIVO</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div>
+          <div style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-bottom:6px;">HORA INICIO</div>
+          <input id="auto-inicio" type="time" value="09:00"
+            style="width:100%;padding:10px;background:var(--bg);border:1px solid var(--border);
+                   border-radius:8px;color:var(--text);font-size:15px;font-family:inherit;outline:none;" />
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-bottom:6px;">HORA FIM</div>
+          <input id="auto-fim" type="time" value="17:30"
+            style="width:100%;padding:10px;background:var(--bg);border:1px solid var(--border);
+                   border-radius:8px;color:var(--text);font-size:15px;font-family:inherit;outline:none;" />
+        </div>
+      </div>
+      <div style="margin-bottom:12px;">
+        <div style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-bottom:6px;">INTERVALO ENTRE SORTEIOS</div>
+        <select id="auto-intervalo"
+          style="width:100%;padding:10px;background:var(--bg);border:1px solid var(--border);
+                 border-radius:8px;color:var(--text);font-size:15px;font-family:inherit;outline:none;">
+          <option value="15">A cada 15 minutos</option>
+          <option value="30" selected>A cada 30 minutos</option>
+          <option value="45">A cada 45 minutos</option>
+          <option value="60">A cada 1 hora</option>
+          <option value="90">A cada 1h 30min</option>
+          <option value="120">A cada 2 horas</option>
+        </select>
+      </div>
+      <div id="auto-proximo" style="font-size:11px;color:var(--muted);text-align:center;margin-bottom:12px;min-height:16px;"></div>
+      <div style="display:flex;gap:10px;">
+        <button id="auto-btn-start" onclick="iniciarAutoSorteio()"
+          style="flex:1;padding:14px;background:var(--green);color:#fff;border:none;
+                 border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;letter-spacing:1px;">
+          ATIVAR
+        </button>
+        <button id="auto-btn-stop" onclick="pararAutoSorteio()" disabled
+          style="flex:1;padding:14px;background:var(--surface);color:var(--muted);
+                 border:1px solid var(--border);border-radius:8px;cursor:pointer;
+                 font-size:13px;font-weight:700;letter-spacing:1px;">
+          PARAR
+        </button>
+      </div>
+    </div>
+
     <div style="margin-top:24px;">
       <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;">- Historico de sorteios -<span id="clear-btn-toggle" style="font-size:9px;color:var(--border);cursor:pointer;letter-spacing:1px;" onclick="toggleClearBtn()">...</span></div>
       <div id="clear-btn-wrap" style="display:none;padding:10px 0;">
@@ -1134,6 +1185,84 @@ function renderChart(data) {
       }
     }
   });
+}
+
+// ═══════════════════════════════════════════
+//  SORTEIO AUTOMATICO
+// ═══════════════════════════════════════════
+let autoTimer = null, autoCheckInterval = null;
+
+function iniciarAutoSorteio() {
+  const inicio    = document.getElementById('auto-inicio').value;
+  const fim       = document.getElementById('auto-fim').value;
+  const intervalo = parseInt(document.getElementById('auto-intervalo').value);
+
+  if (!inicio || !fim) { alert('Define a hora de inicio e fim.'); return; }
+  if (inicio >= fim)   { alert('A hora de inicio deve ser antes do fim.'); return; }
+
+  // Disable inputs
+  document.getElementById('auto-inicio').disabled    = true;
+  document.getElementById('auto-fim').disabled        = true;
+  document.getElementById('auto-intervalo').disabled  = true;
+  document.getElementById('auto-btn-start').disabled  = true;
+  document.getElementById('auto-btn-stop').disabled   = false;
+  document.getElementById('auto-status').textContent  = 'ATIVO';
+  document.getElementById('auto-status').style.background = 'rgba(0,255,157,0.15)';
+  document.getElementById('auto-status').style.color      = 'var(--green)';
+
+  // Calculate next raffle time
+  let proximoSorteio = calcProximoSorteio(inicio, intervalo);
+  atualizarProximo(proximoSorteio);
+
+  autoCheckInterval = setInterval(() => {
+    const agora = horaAtual();
+    if (agora >= fim) { pararAutoSorteio(); return; }
+    if (agora < inicio) return;
+
+    if (agora >= proximoSorteio) {
+      proximoSorteio = calcProximoSorteio(agora, intervalo);
+      atualizarProximo(proximoSorteio);
+      // Switch to raffle tab and start
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+      document.querySelector('[data-tab="raffle"]').classList.add('active');
+      document.getElementById('tab-raffle').classList.add('active');
+      startRaffle();
+    } else {
+      atualizarProximo(proximoSorteio);
+    }
+  }, 10000); // check every 10s
+}
+
+function pararAutoSorteio() {
+  clearInterval(autoCheckInterval);
+  autoCheckInterval = null;
+  document.getElementById('auto-inicio').disabled    = false;
+  document.getElementById('auto-fim').disabled        = false;
+  document.getElementById('auto-intervalo').disabled  = false;
+  document.getElementById('auto-btn-start').disabled  = false;
+  document.getElementById('auto-btn-stop').disabled   = true;
+  document.getElementById('auto-status').textContent  = 'INATIVO';
+  document.getElementById('auto-status').style.background = 'rgba(74,90,122,0.2)';
+  document.getElementById('auto-status').style.color      = 'var(--muted)';
+  document.getElementById('auto-proximo').textContent = '';
+}
+
+function horaAtual() {
+  const now = new Date();
+  return String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+}
+
+function calcProximoSorteio(base, intervalo) {
+  const [h, m] = base.split(':').map(Number);
+  const total  = h * 60 + m + intervalo;
+  const nh     = Math.floor(total / 60) % 24;
+  const nm     = total % 60;
+  return String(nh).padStart(2,'0') + ':' + String(nm).padStart(2,'0');
+}
+
+function atualizarProximo(hora) {
+  document.getElementById('auto-proximo').textContent = 'Proximo sorteio as ' + hora;
 }
 </script>
 </body>
