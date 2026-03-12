@@ -362,27 +362,44 @@ function checkNewWinner() {
 
 function animarSorteio(vencedor) {
   const main = document.getElementById('tv-main');
+  document.getElementById('countdown-big').classList.remove('show');
 
-  // Spinning animation — countdown continues in footer/bottom
+  // Speed increases over 8 seconds: starts slow, ends fast
+  let interval = 300;
+  let elapsed  = 0;
+  const TOTAL  = 8000;
+
   main.innerHTML = `
     <div class="spin-wrap">
       <div class="spin-label">A sortear...</div>
       <div class="spin-num" id="tv-spin">RF-???</div>
     </div>`;
 
-  // Hide big countdown during animation so it doesn't overlap
-  document.getElementById('countdown-big').classList.remove('show');
+  // Play spin sound every tick
+  if (spinSoundInterval) clearInterval(spinSoundInterval);
+  spinSoundInterval = setInterval(() => tvSoundSpin(), 650);
 
-  const anim = setInterval(() => {
+  function tick() {
+    elapsed += interval;
+    if (elapsed >= TOTAL) {
+      if (spinSoundInterval) { clearInterval(spinSoundInterval); spinSoundInterval = null; }
+      const el = document.getElementById('tv-spin');
+      if (el) el.textContent = vencedor.numero;
+      setTimeout(() => {
+        mostrarVencedor(vencedor);
+        lancarConfetti();
+        tvSoundWinner();
+      }, 300);
+      return;
+    }
     const el = document.getElementById('tv-spin');
     if (el) el.textContent = FAKE_NUMS[spinIdx++ % FAKE_NUMS.length];
-  }, 80);
-
-  setTimeout(() => {
-    clearInterval(anim);
-    mostrarVencedor(vencedor);
-    lancarConfetti();
-  }, 4000);
+    // Accelerate: interval shrinks from 300ms to 60ms
+    const progress = elapsed / TOTAL;
+    interval = Math.max(60, 300 - progress * 240);
+    setTimeout(tick, interval);
+  }
+  setTimeout(tick, interval);
 }
 
 function mostrarVencedor(v) {
@@ -420,10 +437,13 @@ function mostrarVencedor(v) {
         </div>
         <div class="idle-subtitle">A aguardar proximo sorteio...</div>
       </div>`;
-    // Restore big countdown if still active
-    if (proximoSorteioTV) {
-      document.getElementById('countdown-big').classList.add('show');
-    }
+    // Force sync config to get updated proximo after raffle
+    sincronizarConfig();
+    setTimeout(() => {
+      if (proximoSorteioTV) {
+        document.getElementById('countdown-big').classList.add('show');
+      }
+    }, 2000);
   }, 30000);
 }
 
@@ -497,7 +517,11 @@ function updateCountdown() {
   footer.textContent = 'Próximo sorteio em ' + str;
   footer.style.color = '#f59e0b';
 
-  // Show big countdown always when active
+  // Beep on last 15 seconds (only once per second)
+  if (mins === 0 && secs <= 15) {
+    tvBeepCountdown(secs);
+  }
+
   bigEl.classList.add('show');
 }
 
