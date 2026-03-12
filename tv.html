@@ -348,23 +348,27 @@ function refreshStats() {
 
 // Poll for new winner every 5 seconds
 function checkNewWinner() {
+  if (animating) return; // don't poll during animation
   apiCall('history').then(hist => {
     if (!hist || !hist.length) return;
     const latest = hist[0];
     const key = latest.numero + String(latest.hora);
     if (ultimoVencedor !== key) {
       ultimoVencedor = key;
-      localStorage.setItem('aarn_ultimo_vencedor', key);
+      try { localStorage.setItem('aarn_ultimo_vencedor', key); } catch(e) {}
       animarSorteio(latest);
     }
   }).catch(()=>{});
 }
 
 function animarSorteio(vencedor) {
+  animating = true;
   const main = document.getElementById('tv-main');
   document.getElementById('countdown-big').classList.remove('show');
 
-  // Speed increases over 8 seconds: starts slow, ends fast
+  // Try to resume audio — may have been suspended
+  if (tvAudioCtx && tvAudioCtx.state === 'suspended') tvAudioCtx.resume();
+
   let interval = 300;
   let elapsed  = 0;
   const TOTAL  = 8000;
@@ -437,6 +441,7 @@ function mostrarVencedor(v) {
         </div>
         <div class="idle-subtitle">A aguardar proximo sorteio...</div>
       </div>`;
+    animating = false;
     // Force sync config to get updated proximo after raffle
     sincronizarConfig();
     setTimeout(() => {
@@ -467,26 +472,27 @@ function lancarConfetti() {
 
 // ── SYNC CONFIG FROM SERVER ──────────────────────
 function sincronizarConfig() {
+  sincronizando = true;
   apiCall('getAutoConfig').then(cfg => {
+    sincronizando = false;
     if (!cfg || !cfg.ativo) {
       setProximoSorteio(null);
       return;
     }
     if (cfg.proximo) {
-      // Só atualiza se a hora for futura
       const parts  = cfg.proximo.split(':');
       const target = new Date();
       target.setHours(parseInt(parts[0]), parseInt(parts[1]), 0, 0);
       if (target > new Date()) {
         setProximoSorteio(cfg.proximo);
       }
-      // Se já passou, mantém o countdown atual — não apaga
     }
-  }).catch(()=>{});
+  }).catch(() => { sincronizando = false; });
 }
 
 // ── COUNTDOWN ──────────────────────────────────
-let proximoSorteioTV = null; // set externally via URL param or postMessage
+let proximoSorteioTV = null;
+let sincronizando = false;
 
 function setProximoSorteio(horaStr) {
   proximoSorteioTV = horaStr; // "HH:MM" or null
@@ -498,6 +504,7 @@ function updateCountdown() {
   const footer = document.getElementById('tv-countdown');
 
   if (!proximoSorteioTV) {
+    if (sincronizando) return; // wait for sync before clearing
     footer.textContent = 'Não há próximo sorteio';
     footer.style.color = '#8ba3c4';
     bigEl.classList.remove('show');
@@ -592,9 +599,9 @@ apiCall('history').then(hist => {
   // Only start polling AFTER we know what's already in history
   setInterval(checkNewWinner, 1000);
 }).catch(() => {
-  // If API fails, still start polling
   setInterval(checkNewWinner, 1000);
 });
+// Guard against double init — clear duplicates handled by animating flag
 
 setInterval(refreshStats, 15000);
 setInterval(updateCountdown, 1000);
