@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Feira da Radio AARN 2026 — Sorteio</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #060b18;
+      color: #e8edf5;
+      font-family: 'Courier New', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* ── FUNDO ANIMADO ── */
+    .bg-grid {
+      position: fixed; inset: 0; z-index: 0;
+      background-image:
+        linear-gradient(rgba(0,255,157,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,255,157,0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      animation: gridMove 20s linear infinite;
+    }
+    @keyframes gridMove { from{background-position:0 0} to{background-position:60px 60px} }
+
+    /* ── HEADER ── */
+    .tv-header {
+      position: fixed; top: 0; left: 0; right: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 24px 48px;
+      background: linear-gradient(to bottom, rgba(6,11,24,0.95), transparent);
+      z-index: 10;
+    }
+    .tv-logo {
+      display: flex; align-items: center; gap: 16px;
+    }
+    .tv-logo img {
+      height: 48px;
+    }
+    .tv-logo-text {
+      font-size: 18px; font-weight: 700; letter-spacing: 3px;
+      color: #7ab8d4; text-transform: uppercase;
+    }
+    .tv-clock {
+      font-size: 28px; font-weight: 700; color: #e8edf5;
+      letter-spacing: 3px;
+    }
+    .tv-stats {
+      display: flex; gap: 32px; align-items: center;
+    }
+    .tv-stat { text-align: center; }
+    .tv-stat-val { font-size: 28px; font-weight: 900; }
+    .tv-stat-val.green  { color: #00ff9d; }
+    .tv-stat-val.blue   { color: #3b9eff; }
+    .tv-stat-label { font-size: 10px; color: #4a5a7a; letter-spacing: 2px; text-transform: uppercase; margin-top: 2px; }
+
+    /* ── MAIN DISPLAY ── */
+    .main {
+      position: relative; z-index: 5;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; padding: 120px 60px 80px;
+      width: 100%;
+    }
+
+    /* IDLE */
+    .idle-wrap { animation: fadeIn 1s ease; }
+    .idle-title {
+      font-size: 20px; letter-spacing: 6px; color: #4a5a7a;
+      text-transform: uppercase; margin-bottom: 32px;
+    }
+    .idle-logo-letters {
+      display: flex; gap: 24px; justify-content: center; margin-bottom: 40px;
+    }
+    .idle-letter {
+      font-size: 120px; font-weight: 900; color: #0d1526;
+      text-shadow: 0 0 40px rgba(0,255,157,0.15);
+      animation: idlePulse 3s ease-in-out infinite;
+    }
+    .idle-letter:nth-child(1) { animation-delay: 0s;    color: #0d1a30; }
+    .idle-letter:nth-child(2) { animation-delay: 0.4s;  color: #0d1a30; }
+    .idle-letter:nth-child(3) { animation-delay: 0.8s;  color: #0d1a30; }
+    .idle-letter:nth-child(4) { animation-delay: 1.2s;  color: #0d1a30; }
+    @keyframes idlePulse {
+      0%,100% { color: #0d1a30; text-shadow: none; }
+      50% { color: #1a3a5c; text-shadow: 0 0 60px rgba(0,255,157,0.2); }
+    }
+    .idle-subtitle {
+      font-size: 16px; letter-spacing: 4px; color: #4a5a7a; text-transform: uppercase;
+    }
+
+    /* SPINNING */
+    .spin-wrap { animation: fadeIn 0.3s ease; }
+    .spin-label {
+      font-size: 16px; letter-spacing: 6px; color: #ffcc00;
+      text-transform: uppercase; margin-bottom: 32px;
+    }
+    .spin-num {
+      font-size: 120px; font-weight: 900; color: #ffcc00;
+      letter-spacing: 8px; line-height: 1;
+      animation: spinFlicker 0.1s linear infinite;
+      text-shadow: 0 0 60px rgba(255,204,0,0.5);
+    }
+    @keyframes spinFlicker { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+    /* WINNER */
+    .winner-wrap {
+      animation: winnerEntrance 0.8s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes winnerEntrance {
+      0%  { transform: scale(0.3) rotate(-5deg); opacity: 0; }
+      100%{ transform: scale(1)   rotate(0deg);  opacity: 1; }
+    }
+    .winner-label {
+      font-size: 14px; letter-spacing: 8px; color: #4a5a7a;
+      text-transform: uppercase; margin-bottom: 24px;
+    }
+    .winner-num {
+      font-size: 100px; font-weight: 900; color: #ffcc00;
+      letter-spacing: 6px; line-height: 1;
+      text-shadow: 0 0 80px rgba(255,204,0,0.6);
+      margin-bottom: 20px;
+    }
+    .winner-name {
+      font-size: 52px; font-weight: 700; color: #ffffff;
+      margin-bottom: 12px; line-height: 1.1;
+    }
+    .winner-ind {
+      font-size: 32px; color: #00ff9d; letter-spacing: 3px;
+      margin-bottom: 24px;
+    }
+    .winner-meta {
+      font-size: 14px; color: #4a5a7a; letter-spacing: 2px;
+    }
+
+    /* CONFETTI */
+    .confetti-piece {
+      position: fixed; width: 10px; height: 10px;
+      top: -20px; border-radius: 2px;
+      animation: confettiFall linear forwards;
+      z-index: 20;
+    }
+    @keyframes confettiFall {
+      0%   { transform: translateY(0) rotate(0deg);   opacity: 1; }
+      100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+    }
+
+    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+    /* ── FOOTER ── */
+    .tv-footer {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      padding: 20px 48px;
+      background: linear-gradient(to top, rgba(6,11,24,0.95), transparent);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 10;
+    }
+    .tv-footer-text {
+      font-size: 13px; letter-spacing: 3px; color: #1e2d4a;
+      text-transform: uppercase;
+    }
+    .live-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #00ff9d; box-shadow: 0 0 8px #00ff9d;
+      display: inline-block; margin-right: 10px;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  </style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+
+<!-- HEADER -->
+<div class="tv-header">
+  <div class="tv-logo">
+    <img src="logo.png" alt="AARN" onerror="this.style.display='none'" />
+    <div class="tv-logo-text">Feira da Rádio AARN 2026</div>
+  </div>
+  <div class="tv-stats">
+    <div class="tv-stat">
+      <div class="tv-stat-val green" id="tv-presentes">-</div>
+      <div class="tv-stat-label">Presentes</div>
+    </div>
+    <div class="tv-stat">
+      <div class="tv-stat-val blue" id="tv-total">-</div>
+      <div class="tv-stat-label">Registados</div>
+    </div>
+  </div>
+  <div class="tv-clock" id="tv-clock">--:--</div>
+</div>
+
+<!-- MAIN -->
+<div class="main" id="tv-main">
+  <div class="idle-wrap" id="state-idle">
+    <div class="idle-title">Sorteio ao Vivo</div>
+    <div class="idle-logo-letters">
+      <span class="idle-letter">A</span>
+      <span class="idle-letter">A</span>
+      <span class="idle-letter">R</span>
+      <span class="idle-letter">N</span>
+    </div>
+    <div class="idle-subtitle">A aguardar sorteio...</div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="tv-footer">
+  <span class="live-dot"></span>
+  <span class="tv-footer-text">Em direto &nbsp;|&nbsp; Escola Sec. Francisco de Holanda, Guimarães &nbsp;|&nbsp; 21 de Março de 2026</span>
+</div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────
+const API_URL = 'https://script.google.com/macros/s/AKfycbyKdkiR2flJpHgr33maoiO6XeioEj6bnxudrqaoW0ufFJh5X1s5dqilCcwKVsOJkMEueQ/exec';
+const FAKE_NUMS = ['RF-012','RF-037','RF-089','RF-004','RF-055','RF-071','RF-023','RF-099'];
+// ────────────────────────────────────────────────
+
+let ultimoVencedor = null;
+let spinIdx = 0;
+
+// Clock
+function updateClock() {
+  document.getElementById('tv-clock').textContent =
+    new Date().toLocaleTimeString('pt-PT', { hour:'2-digit', minute:'2-digit' });
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// JSONP API call
+function apiCall(action, params = {}) {
+  return new Promise((resolve, reject) => {
+    const cbName = 'cb_' + Date.now();
+    const timeout = setTimeout(() => {
+      delete window[cbName];
+      const tag = document.getElementById(cbName);
+      if (tag) tag.remove();
+      reject(new Error('Timeout'));
+    }, 10000);
+    window[cbName] = (data) => {
+      clearTimeout(timeout);
+      delete window[cbName];
+      const tag = document.getElementById(cbName);
+      if (tag) tag.remove();
+      resolve(data);
+    };
+    const p = Object.entries(params).map(([k,v]) => k+'='+encodeURIComponent(v)).join('&');
+    const url = API_URL + '?action=' + action + '&callback=' + cbName + (p ? '&'+p : '');
+    const script = document.createElement('script');
+    script.id = cbName;
+    script.src = url;
+    script.onerror = () => { clearTimeout(timeout); delete window[cbName]; script.remove(); reject(); };
+    document.head.appendChild(script);
+  });
+}
+
+// Stats
+function refreshStats() {
+  apiCall('stats').then(s => {
+    document.getElementById('tv-presentes').textContent = s.presentes;
+    document.getElementById('tv-total').textContent     = s.total;
+  }).catch(()=>{});
+}
+
+// Poll for new winner every 5 seconds
+function checkNewWinner() {
+  apiCall('history').then(hist => {
+    if (!hist || !hist.length) return;
+    const latest = hist[0];
+    const key = latest.numero + latest.hora;
+    if (ultimoVencedor !== key) {
+      ultimoVencedor = key;
+      animarSorteio(latest);
+    }
+  }).catch(()=>{});
+}
+
+function animarSorteio(vencedor) {
+  const main = document.getElementById('tv-main');
+
+  // Spinning animation
+  main.innerHTML = `
+    <div class="spin-wrap">
+      <div class="spin-label">A sortear...</div>
+      <div class="spin-num" id="tv-spin">RF-???</div>
+    </div>`;
+
+  const anim = setInterval(() => {
+    const el = document.getElementById('tv-spin');
+    if (el) el.textContent = FAKE_NUMS[spinIdx++ % FAKE_NUMS.length];
+  }, 80);
+
+  setTimeout(() => {
+    clearInterval(anim);
+    mostrarVencedor(vencedor);
+    lancarConfetti();
+  }, 4000);
+}
+
+function mostrarVencedor(v) {
+  const main = document.getElementById('tv-main');
+  main.innerHTML = `
+    <div class="winner-wrap">
+      <div class="winner-label">&#127881; Vencedor &#127881;</div>
+      <div class="winner-num">${v.numero}</div>
+      <div class="winner-name">${v.nome}</div>
+      ${v.indicativo ? '<div class="winner-ind">' + v.indicativo + '</div>' : ''}
+      <div class="winner-meta">${v.hora} &nbsp;|&nbsp; ${document.getElementById('tv-presentes').textContent} presentes</div>
+    </div>`;
+
+  // Return to idle after 30s
+  setTimeout(() => {
+    main.innerHTML = `
+      <div class="idle-wrap" id="state-idle">
+        <div class="idle-title">Sorteio ao Vivo</div>
+        <div class="idle-logo-letters">
+          <span class="idle-letter">A</span>
+          <span class="idle-letter">A</span>
+          <span class="idle-letter">R</span>
+          <span class="idle-letter">N</span>
+        </div>
+        <div class="idle-subtitle">A aguardar proximo sorteio...</div>
+      </div>`;
+  }, 30000);
+}
+
+function lancarConfetti() {
+  const colors = ['#ffcc00','#00ff9d','#3b9eff','#ff4466','#ffffff'];
+  for (let i = 0; i < 80; i++) {
+    setTimeout(() => {
+      const el = document.createElement('div');
+      el.className = 'confetti-piece';
+      el.style.left     = Math.random() * 100 + 'vw';
+      el.style.background = colors[Math.floor(Math.random() * colors.length)];
+      el.style.width    = (Math.random() * 10 + 6) + 'px';
+      el.style.height   = (Math.random() * 10 + 6) + 'px';
+      el.style.animationDuration = (Math.random() * 2 + 2) + 's';
+      el.style.animationDelay   = Math.random() * 1 + 's';
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 4000);
+    }, i * 30);
+  }
+}
+
+// Init
+refreshStats();
+checkNewWinner();
+setInterval(refreshStats, 15000);
+setInterval(checkNewWinner, 5000);
+</script>
+</body>
+</html>
