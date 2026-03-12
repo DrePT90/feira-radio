@@ -217,7 +217,7 @@
     }
 
     .boot-subtitle {
-      color:var(--muted); font-size:11px; letter-spacing:4px;
+      color:#ffffff; font-size:16px; letter-spacing:4px;
       text-transform:uppercase; margin-bottom:48px;
       font-family:'Courier New',monospace;
       opacity:0; animation: fadeIn 0.5s 1s forwards;
@@ -225,9 +225,15 @@
     @keyframes fadeIn { to { opacity:1; } }
 
     .boot-progress-wrap {
-      width:200px; height:3px; background:var(--border);
-      border-radius:2px; margin-bottom:48px; overflow:hidden;
+      width:240px; height:3px; background:var(--border);
+      border-radius:2px; margin-bottom:16px; overflow:hidden;
       opacity:0; animation: fadeIn 0.3s 0.8s forwards;
+    }
+    .boot-status {
+      color:var(--muted); font-size:10px; letter-spacing:2px;
+      font-family:'Courier New',monospace; margin-bottom:36px;
+      min-height:16px; text-align:center;
+      opacity:0; animation: fadeIn 0.3s 0.9s forwards;
     }
     .boot-progress-bar {
       height:100%; background:var(--green);
@@ -295,6 +301,7 @@
   <div class="boot-progress-wrap">
     <div class="boot-progress-bar" id="boot-bar"></div>
   </div>
+  <div class="boot-status" id="boot-status">&nbsp;</div>
 
   <!-- PIN -->
   <div id="pin-screen">
@@ -328,7 +335,7 @@
   <div class="header-top">
     <div class="live-dot"></div>
     <span style="font-size:22px;">&#x1F4FB;</span>
-    <h1>AARN Registration App v2.0</h1>
+    <h1 id="main-title">AARN Registration App v2.0</h1>
     <span style="color:var(--muted);font-size:11px;" id="clock"></span>
   </div>
   <div class="stats-bar">
@@ -813,19 +820,38 @@ function togglePresente(numero, estadoAtual) {
 const PIN_CORRETO = '2026'; // <- muda o PIN aqui
 let pinAtual = '';
 
-// Progress bar animation
-let prog = 0;
-const barEl = document.getElementById('boot-bar');
+// Boot status messages
+const bootMessages = [
+  { pct: 5,  msg: 'A iniciar sistema...' },
+  { pct: 20, msg: 'A ligar a base de dados...' },
+  { pct: 38, msg: 'A ler registos de participantes...' },
+  { pct: 55, msg: 'A carregar driver QR Code...' },
+  { pct: 70, msg: 'A inicializar modulo de sorteio...' },
+  { pct: 85, msg: 'A verificar ligacao API...' },
+  { pct: 97, msg: 'Pronto.' },
+];
+
+let prog = 0, msgIdx = 0;
+const barEl    = document.getElementById('boot-bar');
+const statusEl = document.getElementById('boot-status');
+
 const progInterval = setInterval(() => {
-  prog += Math.random() * 8 + 2;
+  prog += Math.random() * 3 + 0.8;
   if (prog >= 100) { prog = 100; clearInterval(progInterval); }
   barEl.style.width = prog + '%';
-}, 80);
 
-// After 2.2s show PIN
+  // Update status message
+  while (msgIdx < bootMessages.length && prog >= bootMessages[msgIdx].pct) {
+    statusEl.textContent = bootMessages[msgIdx].msg;
+    msgIdx++;
+  }
+}, 60);
+
+// After 4.5s show PIN
 setTimeout(() => {
+  statusEl.textContent = 'Autenticacao necessaria.';
   document.getElementById('pin-screen').classList.add('show');
-}, 2200);
+}, 4500);
 
 function pinKey(d) {
   if (pinAtual.length >= 4) return;
@@ -855,6 +881,7 @@ function checkPin() {
     document.getElementById('boot-screen').classList.add('fade-out');
     setTimeout(() => {
       document.getElementById('boot-screen').style.display = 'none';
+      document.getElementById('main-title').textContent = 'Event Manager APP';
       if (API_URL) { refreshStats(); loadHistory(); }
     }, 600);
   } else {
