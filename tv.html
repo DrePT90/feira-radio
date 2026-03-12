@@ -269,9 +269,22 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbyKdkiR2flJpHgr33maoiO6
 const FAKE_NUMS = ['RF-012','RF-037','RF-089','RF-004','RF-055','RF-071','RF-023','RF-099'];
 // ────────────────────────────────────────────────
 
-let ultimoVencedor = null;
+let ultimoVencedor = sessionStorage.getItem('aarn_ultimo_vencedor') || null;
 let spinIdx = 0;
 let tvVencedores = [];
+
+function formatHora(h) {
+  if (!h) return '';
+  const s = String(h);
+  // Already HH:MM
+  if (/^\d{2}:\d{2}$/.test(s)) return s;
+  // Date object string
+  try {
+    const d = new Date(s);
+    if (!isNaN(d)) return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+  } catch(e) {}
+  return s;
+}
 
 // Clock
 function updateClock() {
@@ -320,9 +333,10 @@ function checkNewWinner() {
   apiCall('history').then(hist => {
     if (!hist || !hist.length) return;
     const latest = hist[0];
-    const key = latest.numero + latest.hora;
+    const key = latest.numero + String(latest.hora);
     if (ultimoVencedor !== key) {
       ultimoVencedor = key;
+      sessionStorage.setItem('aarn_ultimo_vencedor', key);
       animarSorteio(latest);
     }
   }).catch(()=>{});
@@ -364,7 +378,7 @@ function mostrarVencedor(v) {
       <div class="winner-meta" style="color:#f59e0b;font-size:18px;font-weight:700;letter-spacing:1px;margin-top:16px;line-height:1.5;">
         Por favor dirija-se à mesa da A.A.R.N.<br>para levantar o seu prémio
       </div>
-      <div class="winner-meta" style="margin-top:12px;">${v.hora}</div>
+      <div class="winner-meta" style="margin-top:12px;">${formatHora(v.hora)}</div>
     </div>`;
 
   // Add to history
@@ -482,7 +496,7 @@ function renderTvHistory() {
       <div class="tv-history-num">${i === 0 ? '&#127881; ' : ''}${v.numero}</div>
       <div class="tv-history-nome">${v.nome}</div>
       ${v.indicativo ? '<div class="tv-history-ind">' + v.indicativo + '</div>' : ''}
-      <div class="tv-history-hora">${v.hora}</div>
+      <div class="tv-history-hora">${formatHora(v.hora)}</div>
     </div>`).join('');
 }
 
